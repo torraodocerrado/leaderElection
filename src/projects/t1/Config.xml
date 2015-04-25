@@ -122,7 +122,7 @@
 		<!--  Background map in 2D                                                 -->
 		<!--***********************************************************************-->
 		<!--If set to true, the background of a 2D simulation is colored according to a map, specified in a map-file, specified by the field map-->
-		<useMap value="true" />
+		<useMap value="false" />
 
 		<!--In 2D, the background can be colored depending on a map file. This field contains the file name for this map, which is supposed to be located in the source folder of the current project. The map is only painted if useMap is set to true.-->
 		<map value="images/rpo2.bmp" />
@@ -149,7 +149,7 @@
 		<DefaultReliabilityModel value="ReliableDelivery" />
 
 		<!--Default node implementation used when none is specified-->
-		<DefaultNodeImplementation value="t1:T1ApresentacaoNode" />
+		<DefaultNodeImplementation value="t1:LeaderNode" />
 
 		<!--Show the models implemented by all projects in the drop down options. When set to false, only the models by the selected project and the default project are shown.-->
 		<showModelsOfAllProjects value="false" />
@@ -227,8 +227,8 @@
 	<Custom>
 		<Node defaultSize="100" />
 		<MessageTransmission ConstantTime="1"/>
-		<GeometricNodeCollection rMax="150"/>
-		<UDG rMax="150"/>
+		<GeometricNodeCollection rMax="1000"/>
+		<UDG rMax="1000"/>
 		<SINR alpha="2" beta="0.7" noise="0"/>
 		<RandomWayPoint>
 			<Speed distribution="Gaussian" mean="5" variance="10" />
