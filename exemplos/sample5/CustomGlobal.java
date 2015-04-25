@@ -40,7 +40,6 @@ package projects.sample5;
 import java.awt.Color;
 
 import projects.sample5.nodes.nodeImplementations.FNode;
-
 import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
 import sinalgo.tools.Tools;

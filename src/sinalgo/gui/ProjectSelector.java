@@ -89,8 +89,8 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
-import sinalgo.configuration.Configuration;
 import sinalgo.configuration.AppConfig;
+import sinalgo.configuration.Configuration;
 import sinalgo.configuration.Configuration.ImplementationChoiceInConfigFile;
 import sinalgo.gui.helper.NonRegularGridLayout;
 import sinalgo.gui.helper.UnborderedJTextField;

@@ -37,6 +37,13 @@
 package sinalgo.tools;
 
 
+import java.io.PrintStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
+import java.util.Random;
+import java.util.Vector;
+
 import javax.swing.JOptionPane;
 
 import sinalgo.configuration.WrongConfigurationException;
@@ -72,14 +79,6 @@ import sinalgo.runtime.nodeCollection.NodeCollectionInterface;
 import sinalgo.runtime.packetsInTheAir.PacketsInTheAirBuffer;
 import sinalgo.tools.logging.Logging;
 import sinalgo.tools.statistics.Distribution;
-
-
-import java.io.PrintStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.Random;
-import java.util.Vector;
 
 /**
  * This class holds wrappers to often used method calls into the framework

@@ -70,8 +70,8 @@ import javax.swing.MenuElement;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import sinalgo.configuration.Configuration;
 import sinalgo.configuration.AppConfig;
+import sinalgo.configuration.Configuration;
 import sinalgo.gui.controlPanel.ControlPanel;
 import sinalgo.gui.controlPanel.MaximizedControlPanel;
 import sinalgo.gui.controlPanel.MinimizedControlPanel;
@@ -86,6 +86,7 @@ import sinalgo.io.eps.ExportException;
 import sinalgo.io.eps.Exporter;
 import sinalgo.nodes.Position;
 import sinalgo.runtime.AbstractCustomGlobal;
+import sinalgo.runtime.AbstractCustomGlobal.GlobalMethod;
 import sinalgo.runtime.Global;
 import sinalgo.runtime.Main;
 import sinalgo.runtime.Runtime;

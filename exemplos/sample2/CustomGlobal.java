@@ -34,17 +34,17 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package projects.sample3;
+package projects.sample2;
 
+import java.lang.reflect.Method;
 
-import java.awt.Color;
+import javax.swing.JOptionPane;
 
-import projects.sample3.nodes.nodeImplementations.MobileNode;
-import projects.sample3.nodes.timers.SmsTimer;
-
+import projects.sample2.nodes.nodeImplementations.S2Node;
 import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
 import sinalgo.tools.Tools;
+
 
 /**
  * This class holds customized global state and methods for the framework. 
@@ -79,41 +79,19 @@ public class CustomGlobal extends AbstractCustomGlobal{
 	/**
 	 * An example of a method that will be available through the menu of the GUI.
 	 */
-	@AbstractCustomGlobal.GlobalMethod(menuText="Reset Color")
-	public void resetColor() {
-		for(Node n : Tools.getNodeList()){
-			n.setColor(Color.black);
-		}
-	}
-
-
-	private boolean automaticSMS = false;
-
-	@AbstractCustomGlobal.GlobalMethod(menuText="Toggle Automatic SMS")
-	public void toggleAutomaticSMS() {
-		automaticSMS = !automaticSMS;
+	@AbstractCustomGlobal.GlobalMethod(menuText="Echo")
+	public void echo() {
+		// Query the user for an input
+		String answer = JOptionPane.showInputDialog(null, "This is an example.\nType in any text to echo.");
+		// Show an information message 
+		JOptionPane.showMessageDialog(null, "You typed '" + answer + "'", "Example Echo", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
 	/* (non-Javadoc)
 	 * @see sinalgo.runtime.AbstractCustomGlobal#postRound()
 	 */
 	public void postRound() {
-		if(automaticSMS) {
-			Node sender = getRandomMobileNode();
-			Node receiver = getRandomMobileNode();
-			SmsTimer t = new SmsTimer("Automatic SMS", receiver);
-			t.startRelative(1, sender);
-			sender.setColor(Color.RED);
-			receiver.setColor(Color.BLUE);
-		}
-	}
-	
-	private MobileNode getRandomMobileNode() {
-		Node n = Tools.getNodeList().getRandomNode();
-		while(!(n instanceof MobileNode)) {
-			n = Tools.getNodeList().getRandomNode();
-		}
-		return (MobileNode) n;
+		
 	}
 	
 	/* (non-Javadoc)
@@ -121,5 +99,31 @@ public class CustomGlobal extends AbstractCustomGlobal{
 	 */
 	public void preRun() {
 		// A method called at startup, before the first round is executed.
+	}
+	
+	/**
+	 * Reset all nodes, s.t. they forget their history. 
+	 */
+	@GlobalMethod(menuText="reset")
+	public void reset() {
+		for(Node n : Tools.getNodeList()) {
+			((S2Node) n).reset();
+		}
+		Tools.repaintGUI();
+	}
+	
+	/* (non-Javadoc)
+	 * @see sinalgo.runtime.AbstractCustomGlobal#includeGlobalMethodInMenu(java.lang.reflect.Method, java.lang.String)
+	 */
+	public String includeGlobalMethodInMenu(Method m, String defaultText) {
+		if(m.getName().equals("reset")) {
+			int size = Tools.getNodeList().size();
+			if(size == 0) {
+				return null; 
+			} else {
+				return "Reset all " + Tools.getNodeList().size() + " nodes"; // a context sensitive menu entry
+			}
+		}
+		return defaultText; 
 	}
 }

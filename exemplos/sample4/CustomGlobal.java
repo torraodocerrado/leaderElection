@@ -34,17 +34,15 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package projects.t1;
+package projects.sample4;
 
-import java.lang.reflect.Method;
+import java.awt.Color;
 
 import javax.swing.JOptionPane;
 
-import projects.t1.nodes.nodeImplementations.PresentNode;
 import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
 import sinalgo.tools.Tools;
-
 
 /**
  * This class holds customized global state and methods for the framework. 
@@ -87,43 +85,38 @@ public class CustomGlobal extends AbstractCustomGlobal{
 		JOptionPane.showMessageDialog(null, "You typed '" + answer + "'", "Example Echo", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
-	/* (non-Javadoc)
-	 * @see sinalgo.runtime.AbstractCustomGlobal#postRound()
+	/**
+	 * An example to add a button to the user interface. In this sample, the button is labeled
+	 * with a text 'GO'. Alternatively, you can specify an icon that is shown on the button. See
+	 * AbstractCustomGlobal.CustomButton for more details.   
 	 */
-	public void postRound() {
-		
-	}
-	
-	/* (non-Javadoc)
-	 * @see runtime.AbstractCustomGlobal#preRun()
-	 */
-	public void preRun() {
-		// A method called at startup, before the first round is executed.
+	@AbstractCustomGlobal.CustomButton(buttonText="Clear", toolTipText="Reset the color of all nodes")
+	public void sampleButton() {
+		for(Node n : Tools.getNodeList()) {
+			n.setColor(Color.BLACK);
+		}
+		Tools.repaintGUI(); // to have the changes visible immediately
 	}
 	
 	/**
-	 * Reset all nodes, s.t. they forget their history. 
+	 * Color all nodes red. 
 	 */
-	@GlobalMethod(menuText="reset")
-	public void reset() {
+	@AbstractCustomGlobal.CustomButton(imageName="red.gif", toolTipText="Set all nodes to red.")
+	public void redButton() {
 		for(Node n : Tools.getNodeList()) {
-			((PresentNode) n).reset();
+			n.setColor(Color.RED);
 		}
-		Tools.repaintGUI();
+		Tools.repaintGUI(); // to have the changes visible immediately
 	}
 	
-	/* (non-Javadoc)
-	 * @see sinalgo.runtime.AbstractCustomGlobal#includeGlobalMethodInMenu(java.lang.reflect.Method, java.lang.String)
+	/**
+	 * Color all nodes blue. 
 	 */
-	public String includeGlobalMethodInMenu(Method m, String defaultText) {
-		if(m.getName().equals("reset")) {
-			int size = Tools.getNodeList().size();
-			if(size == 0) {
-				return null; 
-			} else {
-				return "Reset all " + Tools.getNodeList().size() + " nodes"; // a context sensitive menu entry
-			}
+	@AbstractCustomGlobal.CustomButton(imageName="blue.gif", toolTipText="Set all nodes to blue.")
+	public void blueButton() {
+		for(Node n : Tools.getNodeList()) {
+			n.setColor(Color.BLUE);
 		}
-		return defaultText; 
+		Tools.repaintGUI(); // to have the changes visible immediately
 	}
 }

@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import projects.sample6.nodes.messages.MarkMessage;
-
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
 import sinalgo.nodes.messages.Inbox;

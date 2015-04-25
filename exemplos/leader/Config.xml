@@ -23,10 +23,10 @@
 		<asynchronousMode value="false" />
 
 		<!--If set to true, the runtime obtains for each node a new position from the mobility model at the beginning of each round. This flag needs to be turned on if the chosen  mobility model of any node may change the node's position. Set this flag to FALSE for static graphs whose nodes do never change their position to increase performance.-->
-		<mobility value="true" />
+		<mobility value="false" />
 
 		<!--If set to true, the chosen interference model is called at the end of every round to test for interferring packets. To increase performance, set this flag to FALSE if you do not consider interference.-->
-		<interference value="false" ></interference>
+		<interference value="false" />
 
 		<!--Set this flag to true if interference only decreases if fewer messages are being sent and increases if more messages are being sent. If this flag is NOT set, interference for all messages currently being sent is reevaluated whenever a new message is being sent, and whenever a message stops being sent. When this flag is set, interference tests are reduced to a minimum, using the additivity property. This flag only affects the asynchronous mode. In synchronous mode, interference is checked exactly once for every message in every round.-->
 		<interferenceIsAdditive value="true" />
@@ -38,7 +38,7 @@
 		<canReceiveMultiplePacketsInParallel value="true" />
 
 		<!--The default type of edges to be used-->
-		<edgeType value="sinalgo.nodes.edges.Edge" ></edgeType>
+		<edgeType value="sinalgo.nodes.edges.Edge" />
 
 		<!--If set to true, the application exits as soon as the termination criteria is met. This flag only affects the GUI mode.-->
 		<exitOnTerminationInGUI value="false" />
@@ -77,7 +77,7 @@
 		<!--  Logging                                                              -->
 		<!--***********************************************************************-->
 		<!--Name of the default log file, used by the system, but also for use by the end-user. (This log file is stored under sinalgo.runtime.Global.log.)-->
-		<logFileName value="t1logfile.txt" />
+		<logFileName value="logfile.txt" />
 
 		<!--Redirects the default log file to the console. No logfile will be created if set to true.-->
 		<outputToConsole value="true" />
@@ -122,10 +122,10 @@
 		<!--  Background map in 2D                                                 -->
 		<!--***********************************************************************-->
 		<!--If set to true, the background of a 2D simulation is colored according to a map, specified in a map-file, specified by the field map-->
-		<useMap value="true" />
+		<useMap value="false" />
 
 		<!--In 2D, the background can be colored depending on a map file. This field contains the file name for this map, which is supposed to be located in the source folder of the current project. The map is only painted if useMap is set to true.-->
-		<map value="images/rpo2.bmp" />
+		<map value="images/map.jpg" />
 
 		<!--***********************************************************************-->
 		<!--  Models                                                               -->
@@ -137,19 +137,19 @@
 		<DefaultConnectivityModel value="UDG" />
 
 		<!--Default distribution model used when none is specified-->
-		<DefaultDistributionModel value="t1:LakeAvoidRandomDistribution" />
+		<DefaultDistributionModel value="Random" />
 
 		<!--Default interference model used when none is specified-->
 		<DefaultInterferenceModel value="NoInterference" />
 
 		<!--Default mobility model used when none is specified-->
-		<DefaultMobilityModel value="t1:LakeAvoid" />
+		<DefaultMobilityModel value="NoMobility" />
 
 		<!--Default reliability model used when none is specified-->
 		<DefaultReliabilityModel value="ReliableDelivery" />
 
 		<!--Default node implementation used when none is specified-->
-		<DefaultNodeImplementation value="t1:T1ApresentacaoNode" />
+		<DefaultNodeImplementation value="leader:SimpleNode" />
 
 		<!--Show the models implemented by all projects in the drop down options. When set to false, only the models by the selected project and the default project are shown.-->
 		<showModelsOfAllProjects value="false" />
@@ -225,23 +225,28 @@
 
 	</Framework>
 	<Custom>
-		<Node defaultSize="100" />
 		<MessageTransmission ConstantTime="1"/>
-		<GeometricNodeCollection rMax="150"/>
-		<UDG rMax="150"/>
+			
+		<Node defaultSize="20" />
+		
+		<GeometricNodeCollection rMax="1415"/>
+		
+		<UDG rMax="1415"/>
+		
 		<SINR alpha="2" beta="0.7" noise="0"/>
+		
 		<RandomWayPoint>
-			<Speed distribution="Gaussian" mean="5" variance="10" />
+			<Speed distribution="Gaussian" mean="10" variance="20" />
 			<WaitingTime distribution="Poisson" lambda="10" />
 		</RandomWayPoint>
+		
 		<RandomDirection>
-			<NodeSpeed distribution="Gaussian" mean="5" variance="10" />
+			<NodeSpeed distribution="Gaussian" mean="10" variance="20" />
 			<WaitingTime distribution="Poisson" lambda="10" />
 			<MoveTime distribution="Uniform" min="5" max="20" />
 		</RandomDirection>
+		
 		<QUDG rMin="30" rMax="50" ProbabilityType="constant" connectionProbability="0.6"/>
-	</Custom>
-	
+				</Custom>
 </Document>
-
 

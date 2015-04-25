@@ -42,7 +42,6 @@ import java.util.Vector;
 
 import projects.sample6.nodes.nodeImplementations.LeafNode;
 import projects.sample6.nodes.nodeImplementations.TreeNode;
-
 import sinalgo.configuration.Configuration;
 import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
