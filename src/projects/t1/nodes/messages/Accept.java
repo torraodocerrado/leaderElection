@@ -3,18 +3,17 @@ package projects.t1.nodes.messages;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.messages.Message;
 
-public class Invitation extends Message {
-	public Node coord;
+public class Accept extends Message {
 	public int coordenatorCount;
+	public Node sender;
 
 	@Override
 	public Message clone() {
 		return this;
 	}
 
-	public Invitation(Node coord, int coordenatorCount) {
-		this.coord = coord;
+	public Accept(Node sender, int coordenatorCount) {
+		this.sender = sender;
 		this.coordenatorCount = coordenatorCount;
 	}
-
 }

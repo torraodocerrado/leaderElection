@@ -13,7 +13,10 @@ public class AYC_answer extends Message {
 	}
 
 	public AYC_answer(Node node, Node coord) {
-		this.coord = coord;
 		this.node = node;
+		if (coord == null)
+			this.coord = node;
+		else
+			this.coord = coord;
 	}
 }

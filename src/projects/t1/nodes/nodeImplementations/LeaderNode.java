@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import projects.t1.nodes.messages.AYC_answer;
 import projects.t1.nodes.messages.AYCoord;
+import projects.t1.nodes.messages.Accept;
 import projects.t1.nodes.messages.Invitation;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
@@ -16,27 +17,26 @@ import sinalgo.runtime.Global;
 import sinalgo.tools.Tools;
 
 public class LeaderNode extends Node {
-	// conjunto dos membros do próprio grupo
+
+	// conjunto dos membros do proprio grupo
 	public ArrayList<Node> upSet;
-	// conjunto dos membros da união dos grupos
+	// conjunto dos membros da uniao dos grupos
 	public ArrayList<Node> up;
-	// identificação do grupo (par [CoordID,count])
+	// identificao do grupo (par [CoordID,count])
 	public Node coordenatorGroup;
-	public int coordenatorCount;
+	public Node oldCoordenatorGroup;
+	public int coordenatorCount = 0;
 	// conjunto de outros coordenadores descobertos
 	public ArrayList<Node> others;
 	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
-	public int state = 0;
-	// aguardando resposta
-	public boolean waitingAnswer = false;
-	// Momento da última mensagem
-	private double timeOfLastMessage;
-	private double timeT1;
-	private double timeT2;
-
-	public void reset() {
-
-	}
+	public int waitingAnswerAYCoord = 0;
+	public int waitingAnswerInvitation = 0;
+	// Momento da ultima mensagem
+	private double timeAYCoord;
+	private double timerToMerge = 0;
+	private int timeOutAYCoord = 5;
+	private int state = 0;
+	private int noFalha = -1;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
@@ -48,33 +48,13 @@ public class LeaderNode extends Node {
 			if (message instanceof AYC_answer) {
 				this.processAYC_answer((AYC_answer) message);
 			}
+			if (message instanceof Invitation) {
+				this.answerInvitation((Invitation) message);
+			}
+			if (message instanceof Accept) {
+				System.out.println("Accept by " + ((Accept) message).sender.ID);
+			}
 		}
-	}
-
-	private void processAYC_answer(AYC_answer message) {
-		if ((this.IamCoordenator()) && (message.coord.ID == this.ID)
-				&& (!this.others.contains(message.node))) {
-			this.others.add(message.node);
-		}
-	}
-
-	private void answerAYCoord(AYCoord aycoord) {
-		AYC_answer ayc_answer = new AYC_answer(this, this.coordenatorGroup);
-		this.send(ayc_answer, aycoord.sender);
-	}
-
-	public void checkMembers() {
-		if ((this.state == 0) && (this.IamCoordenator())) {
-			this.others = new ArrayList<Node>();
-			AYCoord ayCoord = new AYCoord(this);
-			this.broadcast(ayCoord);
-			this.waitingAnswer = true;
-			this.timeOfLastMessage = Global.currentTime;
-		}
-	}
-
-	public boolean IamCoordenator() {
-		return this.ID == this.coordenatorGroup.ID;
 	}
 
 	@Override
@@ -82,59 +62,8 @@ public class LeaderNode extends Node {
 		if ((Tools.getGlobalTime() % 500) == 0) {
 			this.checkMembers();
 		}
-		if (this.timeOutLastMessage()) {
-			this.merge();
-		}
-		if (this.timeOutT1()) {
-			this.reorganize();
-		}
-	}
-
-	private void reorganize() {
-		if (this.IamCoordenator() && (this.state == 0)) {
-			this.state = 2;
-			int numAnswers = 0;
-			this.timeT2 = Global.currentTime;
-			Ready inviation = new Ready(this, this.getGroup());
-			for (Node no : this.others) {
-				this.send(inviation, no);
-			}
-		}
-
-	}
-
-	private void merge() {
-		if (this.IamCoordenator() && (this.state == 0)) {
-			this.state = 1;
-			this.coordenatorCount++;
-			this.upSet.addAll(this.up);
-			this.up = new ArrayList<Node>();
-			this.timeT1 = Global.currentTime;
-			Invitation inviation = new Invitation(this, this.getGroup());
-			for (Node no : this.others) {
-				this.send(inviation, no);
-			}
-			for (Node no : this.upSet) {
-				this.send(inviation, no);
-			}
-		}
-	}
-
-	private String getGroup() {
-		return this.coordenatorCount + "|" + this.coordenatorCount;
-	}
-
-	private boolean timeOutLastMessage() {
-		return this.waitingAnswer
-				&& ((Global.currentTime - this.timeOfLastMessage) > 3);
-	}
-
-	private boolean timeOutT1() {
-		return ((Global.currentTime - this.timeT1) > 3);
-	}
-
-	private boolean timeOutT2() {
-		return ((Global.currentTime - this.timeT2) > 3);
+		this.checkTimeOutAYCoord();
+		this.checkTimeOutMerge();
 	}
 
 	@Override
@@ -142,20 +71,8 @@ public class LeaderNode extends Node {
 		this.up = new ArrayList<Node>();
 		this.upSet = new ArrayList<Node>();
 		this.others = new ArrayList<Node>();
-
-		if ((this.ID % 2) == 0) {
-			this.coordenatorGroup = Tools.getNodeByID(Tools.getNodeList()
-					.size());
-			this.coordenatorCount = 0;
-			this.setColor(Color.YELLOW);
-		} else {
-			this.coordenatorGroup = this;
-			this.coordenatorCount = 0;
-			this.setColor(Color.RED);
-		}
-		if (this.IamCoordenator()) {
-			this.setColor(Color.blue);
-		}
+		this.coordenatorGroup = this;
+		this.setColor(Color.RED);
 	}
 
 	@Override
@@ -172,18 +89,106 @@ public class LeaderNode extends Node {
 
 	@Override
 	public void draw(Graphics g, PositionTransformation pt, boolean highlight) {
-		double fraction = Math.max(0.1, ((double) upSet.size())
-				/ Tools.getNodeList().size());
+		double fraction = Math.max(0.1, ((double) upSet.size()) / Tools.getNodeList().size());
 		this.drawingSizeInPixels = (int) (fraction * pt.getZoomFactor() * this.defaultDrawingSizeInPixels);
 		this.drawAsDisk(g, pt, highlight, this.drawingSizeInPixels);
 		if (this.IamCoordenator()) {
-			this.drawNodeAsDiskWithText(g, pt, highlight, this.ID + ":"
-					+ this.others.size(), 20, Color.BLACK);
+			this.drawNodeAsDiskWithText(g, pt, highlight, this.ID + ":" + this.others.size(), 20, Color.BLACK);
 		} else {
-			this.drawNodeAsDiskWithText(g, pt, highlight,
-					String.valueOf(this.ID), 20, Color.BLACK);
+			this.drawNodeAsDiskWithText(g, pt, highlight, String.valueOf(this.ID), 20, Color.BLACK);
 		}
-
 	}
 
+	private boolean IamCoordenator() {
+		if (this.coordenatorGroup == null)
+			return false;
+		else
+			return this.ID == this.coordenatorGroup.ID;
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
+
+	private void checkMembers() {
+		if ((this.state == 0) && (this.IamCoordenator())) {
+			this.others = new ArrayList<Node>();
+			AYCoord ayCoord = new AYCoord(this);
+			this.broadcast(ayCoord);
+			this.waitingAnswerAYCoord = Tools.getNodeList().size() - 1;
+			this.timeAYCoord = Global.currentTime;
+		}
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
+
+	private void merge() {
+		if ((this.IamCoordenator()) && (this.state == 0)) {
+			this.state = 1;
+			this.coordenatorCount++;
+			this.upSet = this.up;
+			this.up = new ArrayList<Node>();
+			for (Node no : this.others) {
+				Invitation message = new Invitation(this, this.coordenatorCount);
+				this.send(message, no);
+			}
+		}
+	}
+
+	private void checkTimeOutMerge() {
+		if ((this.state == 0) && (this.timerToMerge == Global.currentTime)) {
+			System.out.println(" start merge " + this.ID);
+			this.merge();
+		}
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
+
+	private void checkTimeOutAYCoord() {
+		double temp = Global.currentTime - this.timeAYCoord;
+		if ((this.state == 0) && (this.waitingAnswerAYCoord > 0) && (temp > this.timeOutAYCoord)) {
+			this.waitingAnswerAYCoord = 0;
+			this.timeAYCoord = 0;
+			System.out.println("time out AYCoord " + this.ID);
+		}
+	}
+
+	private void answerAYCoord(AYCoord aycoord) {
+		System.out.println("AYCoord from " + aycoord.sender.ID);
+		if (this.ID != this.noFalha) {
+			AYC_answer ayc_answer = new AYC_answer(this, this.coordenatorGroup);
+			this.send(ayc_answer, aycoord.sender);
+		}
+	}
+
+	private void processAYC_answer(AYC_answer message) {
+		System.out.println("AYC_answer from " + message.node.ID);
+		if (message.coord.ID != this.ID) {
+			this.others.add(message.coord);
+		}
+		this.waitingAnswerAYCoord--;
+		if ((this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
+			this.timerToMerge = Global.currentTime + ((Tools.getNodeList().size() * 10) - (this.ID * 10)) + 5;
+		}
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
+
+	private void answerInvitation(Invitation message) {
+		System.out.println("Invitation from " + this.ID + " by " + message.coord.ID);
+		if (this.state == 0) {
+			this.oldCoordenatorGroup = this.coordenatorGroup;
+			this.upSet = this.up;
+			this.state = 1;
+			this.coordenatorGroup = message.coord;
+			this.coordenatorCount = message.coordenatorCount;
+			if (this.oldCoordenatorGroup == this) {
+				for (Node no : this.upSet) {
+					this.send(message, no);
+				}
+			}
+			Accept accept = new Accept(this, this.coordenatorCount);
+			this.send(accept, message.coord);
+		}
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
 }
