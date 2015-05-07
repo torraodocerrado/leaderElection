@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import projects.t1.nodes.messages.AYC_answer;
 import projects.t1.nodes.messages.AYCoord;
 import projects.t1.nodes.messages.Accept;
+import projects.t1.nodes.messages.Accept_answer;
 import projects.t1.nodes.messages.Invitation;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
@@ -28,15 +29,16 @@ public class LeaderNode extends Node {
 	public int coordenatorCount = 0;
 	// conjunto de outros coordenadores descobertos
 	public ArrayList<Node> others;
-	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
-	public int waitingAnswerAYCoord = 0;
-	public int waitingAnswerInvitation = 0;
 	// Momento da ultima mensagem
 	private double timeAYCoord;
 	private double timerToMerge = 0;
 	private int timeOutAYCoord = 5;
+	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
 	private int state = 0;
-	private int noFalha = -1;
+	// contadores de mensagens
+	public int waitingAnswerAYCoord = 0;
+	public int waitingAnswerInvitation = 0;
+	public int waitingAccept_answer = 0;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
@@ -52,7 +54,10 @@ public class LeaderNode extends Node {
 				this.answerInvitation((Invitation) message);
 			}
 			if (message instanceof Accept) {
-				System.out.println("Accept by " + ((Accept) message).sender.ID);
+				this.answerAccept((Accept) message);
+			}
+			if (message instanceof Accept_answer) {
+				this.processAccept_answer((Accept_answer) message);
 			}
 		}
 	}
@@ -76,6 +81,19 @@ public class LeaderNode extends Node {
 	}
 
 	@Override
+	public void draw(Graphics g, PositionTransformation pt, boolean highlight) {
+		double fraction = Math.max(0.1, ((double) upSet.size()) / Tools.getNodeList().size());
+		this.drawingSizeInPixels = (int) (fraction * pt.getZoomFactor() * this.defaultDrawingSizeInPixels);
+		this.drawAsDisk(g, pt, highlight, this.drawingSizeInPixels);
+		this.drawNodeAsDiskWithText(g, pt, highlight, String.valueOf(this.ID), 20, Color.BLACK);
+		if (this.IamCoordenator()) {
+			this.setColor(Color.blue);
+		} else {
+			this.setColor(Color.RED);
+		}
+	}
+
+	@Override
 	public void neighborhoodChange() {
 	}
 
@@ -85,18 +103,6 @@ public class LeaderNode extends Node {
 
 	@Override
 	public void checkRequirements() throws WrongConfigurationException {
-	}
-
-	@Override
-	public void draw(Graphics g, PositionTransformation pt, boolean highlight) {
-		double fraction = Math.max(0.1, ((double) upSet.size()) / Tools.getNodeList().size());
-		this.drawingSizeInPixels = (int) (fraction * pt.getZoomFactor() * this.defaultDrawingSizeInPixels);
-		this.drawAsDisk(g, pt, highlight, this.drawingSizeInPixels);
-		if (this.IamCoordenator()) {
-			this.drawNodeAsDiskWithText(g, pt, highlight, this.ID + ":" + this.others.size(), 20, Color.BLACK);
-		} else {
-			this.drawNodeAsDiskWithText(g, pt, highlight, String.valueOf(this.ID), 20, Color.BLACK);
-		}
 	}
 
 	private boolean IamCoordenator() {
@@ -127,6 +133,7 @@ public class LeaderNode extends Node {
 			this.upSet = this.up;
 			this.up = new ArrayList<Node>();
 			for (Node no : this.others) {
+				this.waitingAnswerInvitation++;
 				Invitation message = new Invitation(this, this.coordenatorCount);
 				this.send(message, no);
 			}
@@ -153,10 +160,8 @@ public class LeaderNode extends Node {
 
 	private void answerAYCoord(AYCoord aycoord) {
 		System.out.println("AYCoord from " + aycoord.sender.ID);
-		if (this.ID != this.noFalha) {
-			AYC_answer ayc_answer = new AYC_answer(this, this.coordenatorGroup);
-			this.send(ayc_answer, aycoord.sender);
-		}
+		AYC_answer ayc_answer = new AYC_answer(this, this.coordenatorGroup);
+		this.send(ayc_answer, aycoord.sender);
 	}
 
 	private void processAYC_answer(AYC_answer message) {
@@ -191,4 +196,28 @@ public class LeaderNode extends Node {
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
+	private void answerAccept(Accept message) {
+		System.out.println("Accept by " + message.sender.ID);
+		Accept_answer accept_answer;
+		if ((this.state == 1) && (this.IamCoordenator()) && (message.coordenatorCount == this.coordenatorCount)) {
+			this.up.add(message.sender);
+			accept_answer = new Accept_answer(this, true);
+		} else {
+			accept_answer = new Accept_answer(this, false);
+		}
+		this.send(accept_answer, message.sender);
+		this.waitingAnswerInvitation--;
+
+		if (this.waitingAnswerInvitation == 0) {
+			this.state = 0;
+		}
+	}
+
+	private void processAccept_answer(Accept_answer message) {
+		this.state = 0;
+		System.out.println("Accept_answer from " + this.ID + " by " + message.sender.ID);
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
+
 }
