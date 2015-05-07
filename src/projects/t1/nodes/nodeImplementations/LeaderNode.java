@@ -3,9 +3,12 @@ package projects.t1.nodes.nodeImplementations;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.Random;
 
 import projects.t1.nodes.messages.AYC_answer;
 import projects.t1.nodes.messages.AYCoord;
+import projects.t1.nodes.messages.AYThere;
+import projects.t1.nodes.messages.AYThere_answer;
 import projects.t1.nodes.messages.Accept;
 import projects.t1.nodes.messages.Accept_answer;
 import projects.t1.nodes.messages.Invitation;
@@ -32,43 +35,56 @@ public class LeaderNode extends Node {
 	// Momento da ultima mensagem
 	private double timeAYCoord;
 	private double timerToMerge = 0;
-	private int timeOutAYCoord = 5;
+	private double timeOut = 10;
+	private double timeOutAYThere = 0;
 	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
 	private int state = 0;
 	// contadores de mensagens
-	public int waitingAnswerAYCoord = 0;
-	public int waitingAnswerInvitation = 0;
-	public int waitingAccept_answer = 0;
+	private int waitingAnswerAYCoord = 0;
+	private int waitingAnswerInvitation = 0;
+	private Random randomGenerator;
+	private int coinChancePositive = 999999;
+	private boolean log_on = true;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
-		while (inbox.hasNext()) {
-			Message message = inbox.next();
-			if (message instanceof AYCoord) {
-				this.answerAYCoord((AYCoord) message);
+		if (this.flipTheCoin()) {
+			while (inbox.hasNext()) {
+				Message message = inbox.next();
+				if (message instanceof AYCoord) {
+					this.answerAYCoord((AYCoord) message);
+				}
+				if (message instanceof AYC_answer) {
+					this.processAYC_answer((AYC_answer) message);
+				}
+				if (message instanceof Invitation) {
+					this.answerInvitation((Invitation) message);
+				}
+				if (message instanceof Accept) {
+					this.answerAccept((Accept) message);
+				}
+				if (message instanceof Accept_answer) {
+					this.processAccept_answer((Accept_answer) message);
+				}
+				if (message instanceof AYThere) {
+					this.answerAYThere((AYThere) message);
+				}
+				if (message instanceof AYThere_answer) {
+					this.processAYThere_answer((AYThere_answer) message);
+				}
 			}
-			if (message instanceof AYC_answer) {
-				this.processAYC_answer((AYC_answer) message);
-			}
-			if (message instanceof Invitation) {
-				this.answerInvitation((Invitation) message);
-			}
-			if (message instanceof Accept) {
-				this.answerAccept((Accept) message);
-			}
-			if (message instanceof Accept_answer) {
-				this.processAccept_answer((Accept_answer) message);
-			}
+		} else {
+			System.out.println("perdeu mensagem na moeda ID: " + this.ID);
 		}
 	}
 
 	@Override
 	public void preStep() {
-		if ((Tools.getGlobalTime() % 500) == 0) {
-			this.checkMembers();
-		}
+		this.checkMembers();
+		this.checkCoord();
 		this.checkTimeOutAYCoord();
 		this.checkTimeOutMerge();
+		this.checkTimeAYThere();
 	}
 
 	@Override
@@ -78,12 +94,11 @@ public class LeaderNode extends Node {
 		this.others = new ArrayList<Node>();
 		this.coordenatorGroup = this;
 		this.setColor(Color.RED);
+		this.randomGenerator = new Random();
 	}
 
 	@Override
 	public void draw(Graphics g, PositionTransformation pt, boolean highlight) {
-		double fraction = Math.max(0.1, ((double) upSet.size()) / Tools.getNodeList().size());
-		this.drawingSizeInPixels = (int) (fraction * pt.getZoomFactor() * this.defaultDrawingSizeInPixels);
 		this.drawAsDisk(g, pt, highlight, this.drawingSizeInPixels);
 		this.drawNodeAsDiskWithText(g, pt, highlight, String.valueOf(this.ID), 20, Color.BLACK);
 		if (this.IamCoordenator()) {
@@ -114,18 +129,6 @@ public class LeaderNode extends Node {
 
 	/*-------------------------------------------------------------------------------------------------*/
 
-	private void checkMembers() {
-		if ((this.state == 0) && (this.IamCoordenator())) {
-			this.others = new ArrayList<Node>();
-			AYCoord ayCoord = new AYCoord(this);
-			this.broadcast(ayCoord);
-			this.waitingAnswerAYCoord = Tools.getNodeList().size() - 1;
-			this.timeAYCoord = Global.currentTime;
-		}
-	}
-
-	/*-------------------------------------------------------------------------------------------------*/
-
 	private void merge() {
 		if ((this.IamCoordenator()) && (this.state == 0)) {
 			this.state = 1;
@@ -142,44 +145,57 @@ public class LeaderNode extends Node {
 
 	private void checkTimeOutMerge() {
 		if ((this.state == 0) && (this.timerToMerge == Global.currentTime)) {
-			System.out.println(" start merge " + this.ID);
+			log(" start merge " + this.ID);
 			this.merge();
 		}
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
 
+	private void checkMembers() {
+		if (Global.currentTime % 100 == 0) {
+			if ((this.waitingAnswerAYCoord == 0) && (this.state == 0) && (this.IamCoordenator())) {
+				this.others = new ArrayList<Node>();
+				AYCoord ayCoord = new AYCoord(this);
+				this.broadcast(ayCoord);
+				this.waitingAnswerAYCoord = this.outgoingConnections.size();
+				this.timeAYCoord = Global.currentTime;
+			}
+		}
+	}
+
 	private void checkTimeOutAYCoord() {
 		double temp = Global.currentTime - this.timeAYCoord;
-		if ((this.state == 0) && (this.waitingAnswerAYCoord > 0) && (temp > this.timeOutAYCoord)) {
+		if ((this.state == 0) && (this.waitingAnswerAYCoord > 0) && (temp > this.timeOut)) {
 			this.waitingAnswerAYCoord = 0;
 			this.timeAYCoord = 0;
-			System.out.println("time out AYCoord " + this.ID);
+			log("time out AYCoord " + this.ID);
 		}
 	}
 
 	private void answerAYCoord(AYCoord aycoord) {
-		System.out.println("AYCoord from " + aycoord.sender.ID);
+		log("AYCoord from " + aycoord.sender.ID);
 		AYC_answer ayc_answer = new AYC_answer(this, this.coordenatorGroup);
 		this.send(ayc_answer, aycoord.sender);
 	}
 
 	private void processAYC_answer(AYC_answer message) {
-		System.out.println("AYC_answer from " + message.node.ID);
+		log("AYC_answer from " + this.ID + " by " + message.node.ID);
 		if (message.coord.ID != this.ID) {
 			this.others.add(message.coord);
 		}
 		this.waitingAnswerAYCoord--;
 		if ((this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
-			this.timerToMerge = Global.currentTime + ((Tools.getNodeList().size() * 10) - (this.ID * 10)) + 5;
+			this.timerToMerge = Global.currentTime + 10 + (Tools.getNodeList().size() - this.ID);
+			log("Timer: " + this.timerToMerge);
 		}
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void answerInvitation(Invitation message) {
-		System.out.println("Invitation from " + this.ID + " by " + message.coord.ID);
 		if (this.state == 0) {
+			log("Invitation from " + this.ID + " by " + message.coord.ID);
 			this.oldCoordenatorGroup = this.coordenatorGroup;
 			this.upSet = this.up;
 			this.state = 1;
@@ -197,7 +213,7 @@ public class LeaderNode extends Node {
 
 	/*-------------------------------------------------------------------------------------------------*/
 	private void answerAccept(Accept message) {
-		System.out.println("Accept by " + message.sender.ID);
+		log("Accept by " + message.sender.ID);
 		Accept_answer accept_answer;
 		if ((this.state == 1) && (this.IamCoordenator()) && (message.coordenatorCount == this.coordenatorCount)) {
 			this.up.add(message.sender);
@@ -215,9 +231,77 @@ public class LeaderNode extends Node {
 
 	private void processAccept_answer(Accept_answer message) {
 		this.state = 0;
-		System.out.println("Accept_answer from " + this.ID + " by " + message.sender.ID);
+		log("Accept_answer from " + this.ID + " by " + message.sender.ID);
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
 
+	private void checkCoord() {
+		if (Global.currentTime % 100 == 0) {
+			if ((this.timeOutAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
+				AYThere aythere = new AYThere(this, this.coordenatorCount);
+				this.send(aythere, this.coordenatorGroup);
+				this.timeOutAYThere = Global.currentTime;
+			}
+		}
+	}
+
+	private void checkTimeAYThere() {
+		if (this.timeOutAYThere > 0) {
+			double temp = Global.currentTime - this.timeOutAYThere;
+			if ((this.state == 0) && (temp > this.timeOut)) {
+				this.timeOutAYThere = 0;
+				log("Time out timeOutAYThere " + this.ID);
+				this.recovery();
+			}
+		}
+
+	}
+
+	private void answerAYThere(AYThere message) {
+		AYThere_answer ayt_answer;
+		if (this.IamCoordenator()) {
+			if ((message.coordenatorCount == this.coordenatorCount) && (this.up.contains(message.sender))) {
+				ayt_answer = new AYThere_answer(this, true);
+			} else {
+				ayt_answer = new AYThere_answer(this, false);
+			}
+			this.send(ayt_answer, message.sender);
+		}
+	}
+
+	private void recovery() {
+		this.state = 1;
+		this.coordenatorCount++;
+		this.coordenatorGroup = this;
+		this.up = new ArrayList<Node>();
+		this.resetIDCounter();
+		this.state = 0;
+
+	}
+
+	private void processAYThere_answer(AYThere_answer message) {
+		this.timeOutAYThere = 0;
+		if (!message.answer) {
+			recovery();
+		}
+
+	}
+
+	/*-------------------------------------------------------------------------------------------------*/
+
+	private boolean flipTheCoin() {
+		int num_randomico = randomGenerator.nextInt(1000000);
+		if (coinChancePositive > num_randomico) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private void log(String message) {
+		if (this.log_on) {
+			System.out.println(message);
+		}
+	}
 }

@@ -125,7 +125,7 @@
 		<useMap value="false" />
 
 		<!--In 2D, the background can be colored depending on a map file. This field contains the file name for this map, which is supposed to be located in the source folder of the current project. The map is only painted if useMap is set to true.-->
-		<map value="images/rpo2.bmp" />
+		<map value="images/rpo5.bmp" />
 
 		<!--***********************************************************************-->
 		<!--  Models                                                               -->
@@ -137,13 +137,13 @@
 		<DefaultConnectivityModel value="UDG" />
 
 		<!--Default distribution model used when none is specified-->
-		<DefaultDistributionModel value="t1:LakeAvoidRandomDistribution" />
+		<DefaultDistributionModel value="Circle" />
 
 		<!--Default interference model used when none is specified-->
 		<DefaultInterferenceModel value="NoInterference" />
 
 		<!--Default mobility model used when none is specified-->
-		<DefaultMobilityModel value="t1:LakeAvoid" />
+		<DefaultMobilityModel value="NoMobility" />
 
 		<!--Default reliability model used when none is specified-->
 		<DefaultReliabilityModel value="ReliableDelivery" />
