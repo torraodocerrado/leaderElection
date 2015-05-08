@@ -46,8 +46,8 @@ public class LeaderNode extends Node {
 	private int waitingAnswerInvitation = 0;
 
 	private Random randomGenerator;
-	private int coinChancePositive = 99;
 	private boolean log_on = true;
+	private int coinChancePositive = 100;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
