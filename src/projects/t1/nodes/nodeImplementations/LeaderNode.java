@@ -35,15 +35,18 @@ public class LeaderNode extends Node {
 	// Momento da ultima mensagem
 	private double timeAYCoord;
 	private double timerToMerge = 0;
-	private double timeOut = 10;
+	private double timeOut = 100;
 	private double timeOutAYThere = 0;
 	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
 	private int state = 0;
 	// contadores de mensagens
 	private int waitingAnswerAYCoord = 0;
+	// AnswerInvitation
+	private double timeOutAnswerInvitation = 0;
 	private int waitingAnswerInvitation = 0;
+
 	private Random randomGenerator;
-	private int coinChancePositive = 999999;
+	private int coinChancePositive = 99;
 	private boolean log_on = true;
 
 	@Override
@@ -82,9 +85,10 @@ public class LeaderNode extends Node {
 	public void preStep() {
 		this.checkMembers();
 		this.checkCoord();
-		this.checkTimeOutAYCoord();
-		this.checkTimeOutMerge();
-		this.checkTimeAYThere();
+		this.checkTimerToMerge();
+		this.timeOutAYCoord();
+		this.timeOutAYThere();
+		this.timeOutAnswerInvitation();
 	}
 
 	@Override
@@ -140,12 +144,13 @@ public class LeaderNode extends Node {
 				Invitation message = new Invitation(this, this.coordenatorCount);
 				this.send(message, no);
 			}
+			this.timeOutAnswerInvitation = Global.currentTime;
 		}
 	}
 
-	private void checkTimeOutMerge() {
+	private void checkTimerToMerge() {
 		if ((this.state == 0) && (this.timerToMerge == Global.currentTime)) {
-			log(" start merge " + this.ID);
+			log("Start merge " + this.ID);
 			this.merge();
 		}
 	}
@@ -164,12 +169,22 @@ public class LeaderNode extends Node {
 		}
 	}
 
-	private void checkTimeOutAYCoord() {
+	private void timeOutAYCoord() {
 		double temp = Global.currentTime - this.timeAYCoord;
 		if ((this.state == 0) && (this.waitingAnswerAYCoord > 0) && (temp > this.timeOut)) {
 			this.waitingAnswerAYCoord = 0;
 			this.timeAYCoord = 0;
 			log("time out AYCoord " + this.ID);
+		}
+	}
+
+	private void timeOutAnswerInvitation() {
+		double temp = Global.currentTime - this.timeOutAnswerInvitation;
+		if ((this.waitingAnswerInvitation > 0) && (temp > this.timeOut)) {
+			this.state = 0;
+			this.waitingAnswerInvitation = 0;
+			this.timeOutAnswerInvitation = 0;
+			log("Time out timeOutAnswerInvitation " + this.ID);
 		}
 	}
 
@@ -186,8 +201,8 @@ public class LeaderNode extends Node {
 		}
 		this.waitingAnswerAYCoord--;
 		if ((this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
-			this.timerToMerge = Global.currentTime + 10 + (Tools.getNodeList().size() - this.ID);
-			log("Timer: " + this.timerToMerge);
+			this.timerToMerge = Global.currentTime + (Tools.getNodeList().size() * 10 + (10 - this.ID * 10));
+			log("ID: " + this.ID + " timer: " + this.timerToMerge + " actualy " + Global.currentTime);
 		}
 	}
 
@@ -213,7 +228,7 @@ public class LeaderNode extends Node {
 
 	/*-------------------------------------------------------------------------------------------------*/
 	private void answerAccept(Accept message) {
-		log("Accept by " + message.sender.ID);
+		log("Accept from " + message.sender.ID + " by " + this.ID);
 		Accept_answer accept_answer;
 		if ((this.state == 1) && (this.IamCoordenator()) && (message.coordenatorCount == this.coordenatorCount)) {
 			this.up.add(message.sender);
@@ -231,6 +246,8 @@ public class LeaderNode extends Node {
 
 	private void processAccept_answer(Accept_answer message) {
 		this.state = 0;
+		this.others.clear();
+		this.timerToMerge = 0;
 		log("Accept_answer from " + this.ID + " by " + message.sender.ID);
 	}
 
@@ -246,7 +263,7 @@ public class LeaderNode extends Node {
 		}
 	}
 
-	private void checkTimeAYThere() {
+	private void timeOutAYThere() {
 		if (this.timeOutAYThere > 0) {
 			double temp = Global.currentTime - this.timeOutAYThere;
 			if ((this.state == 0) && (temp > this.timeOut)) {
@@ -275,9 +292,7 @@ public class LeaderNode extends Node {
 		this.coordenatorCount++;
 		this.coordenatorGroup = this;
 		this.up = new ArrayList<Node>();
-		this.resetIDCounter();
 		this.state = 0;
-
 	}
 
 	private void processAYThere_answer(AYThere_answer message) {
@@ -291,7 +306,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private boolean flipTheCoin() {
-		int num_randomico = randomGenerator.nextInt(1000000);
+		int num_randomico = randomGenerator.nextInt(100);
 		if (coinChancePositive > num_randomico) {
 			return true;
 		} else {
