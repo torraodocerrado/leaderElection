@@ -26,7 +26,7 @@
 		<mobility value="true" />
 
 		<!--If set to true, the chosen interference model is called at the end of every round to test for interferring packets. To increase performance, set this flag to FALSE if you do not consider interference.-->
-		<interference value="false" ></interference>
+		<interference value="false" />
 
 		<!--Set this flag to true if interference only decreases if fewer messages are being sent and increases if more messages are being sent. If this flag is NOT set, interference for all messages currently being sent is reevaluated whenever a new message is being sent, and whenever a message stops being sent. When this flag is set, interference tests are reduced to a minimum, using the additivity property. This flag only affects the asynchronous mode. In synchronous mode, interference is checked exactly once for every message in every round.-->
 		<interferenceIsAdditive value="true" />
@@ -38,7 +38,7 @@
 		<canReceiveMultiplePacketsInParallel value="true" />
 
 		<!--The default type of edges to be used-->
-		<edgeType value="sinalgo.nodes.edges.Edge" ></edgeType>
+		<edgeType value="sinalgo.nodes.edges.Edge" />
 
 		<!--If set to true, the application exits as soon as the termination criteria is met. This flag only affects the GUI mode.-->
 		<exitOnTerminationInGUI value="false" />
@@ -223,10 +223,6 @@
 		<!--The dsfault value of the rounds field.-->
 		<defaultRoundNumber value="1" />
 
-		<!--Default reliability model used when none is specified-->
-		<!--<DefaultReliabilityModel value="LossyDelivery" />-->
-
-
 	</Framework>
 	<Custom>
 		<Node defaultSize="100" />
@@ -248,8 +244,6 @@
 		<UDG rMax="350"/>
 		
 		
-	</Custom>
-	
+		</Custom>
 </Document>
-
 

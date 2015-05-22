@@ -35,8 +35,7 @@ public class LeaderNode extends Node {
 	// Momento da ultima mensagem
 	private double timeAYCoord;
 	private double timerToMerge = 0;
-	private double timeOut = 100;
-	private double timeOutAYThere = 0;
+	private double timeStartAYThere = 0;
 	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
 	private int state = 0;
 	// contadores de mensagens
@@ -44,40 +43,38 @@ public class LeaderNode extends Node {
 	// AnswerInvitation
 	private double timeOutAnswerInvitation = 0;
 	private int waitingAnswerInvitation = 0;
+	private double timeAcceptInvitation = 0;
 
 	private Random randomGenerator;
 	private boolean log_on = true;
-	private int coinChancePositive = 99;
+
+	private double timeOut = 50;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
-		if (this.flipTheCoin()) {
-			while (inbox.hasNext()) {
-				Message message = inbox.next();
-				if (message instanceof AYCoord) {
-					this.answerAYCoord((AYCoord) message);
-				}
-				if (message instanceof AYC_answer) {
-					this.processAYC_answer((AYC_answer) message);
-				}
-				if (message instanceof Invitation) {
-					this.answerInvitation((Invitation) message);
-				}
-				if (message instanceof Accept) {
-					this.answerAccept((Accept) message);
-				}
-				if (message instanceof Accept_answer) {
-					this.processAccept_answer((Accept_answer) message);
-				}
-				if (message instanceof AYThere) {
-					this.answerAYThere((AYThere) message);
-				}
-				if (message instanceof AYThere_answer) {
-					this.processAYThere_answer((AYThere_answer) message);
-				}
+		while (inbox.hasNext()) {
+			Message message = inbox.next();
+			if (message instanceof AYCoord) {
+				this.answerAYCoord((AYCoord) message);
 			}
-		} else {
-			System.out.println("perdeu mensagem na moeda ID: " + this.ID);
+			if (message instanceof AYC_answer) {
+				this.processAYC_answer((AYC_answer) message);
+			}
+			if (message instanceof Invitation) {
+				this.answerInvitation((Invitation) message);
+			}
+			if (message instanceof Accept) {
+				this.answerAccept((Accept) message);
+			}
+			if (message instanceof Accept_answer) {
+				this.processAccept_answer((Accept_answer) message);
+			}
+			if (message instanceof AYThere) {
+				this.answerAYThere((AYThere) message);
+			}
+			if (message instanceof AYThere_answer) {
+				this.processAYThere_answer((AYThere_answer) message);
+			}
 		}
 	}
 
@@ -88,6 +85,7 @@ public class LeaderNode extends Node {
 		this.checkTimerToMerge();
 		this.timeOutAYCoord();
 		this.timeOutAYThere();
+		this.timeOutAcceptInvitation();
 		this.timeOutAnswerInvitation();
 	}
 
@@ -139,11 +137,13 @@ public class LeaderNode extends Node {
 			this.coordenatorCount++;
 			this.upSet = this.up;
 			this.up = new ArrayList<Node>();
+			this.waitingAnswerInvitation = 0;
 			for (Node no : this.others) {
 				this.waitingAnswerInvitation++;
 				Invitation message = new Invitation(this, this.coordenatorCount);
 				this.send(message, no);
 			}
+			this.others.clear();
 			this.timeOutAnswerInvitation = Global.currentTime;
 		}
 	}
@@ -159,7 +159,7 @@ public class LeaderNode extends Node {
 
 	private void checkMembers() {
 		if (Global.currentTime % 100 == 0) {
-			if ((this.waitingAnswerAYCoord == 0) && (this.state == 0) && (this.IamCoordenator())) {
+			if ((this.IamCoordenator()) && (this.waitingAnswerAYCoord == 0) && (this.state == 0)) {
 				this.others = new ArrayList<Node>();
 				AYCoord ayCoord = new AYCoord(this);
 				this.broadcast(ayCoord);
@@ -181,6 +181,7 @@ public class LeaderNode extends Node {
 	private void timeOutAnswerInvitation() {
 		double temp = Global.currentTime - this.timeOutAnswerInvitation;
 		if ((this.waitingAnswerInvitation > 0) && (temp > this.timeOut)) {
+			log("Time out timeOutAnswerInvitation by id " + this.ID + " SIZE " + this.waitingAnswerInvitation);
 			this.state = 0;
 			this.waitingAnswerInvitation = 0;
 			this.timeOutAnswerInvitation = 0;
@@ -189,20 +190,22 @@ public class LeaderNode extends Node {
 	}
 
 	private void answerAYCoord(AYCoord aycoord) {
-		log("AYCoord from " + aycoord.sender.ID);
+		log("AYC_answer " + aycoord.sender.ID + " by " + this.ID + " my coord is " + this.coordenatorGroup + " my state is " + this.state + " my timeOutAYThere is " + this.timeStartAYThere);
 		AYC_answer ayc_answer = new AYC_answer(this, this.coordenatorGroup);
 		this.send(ayc_answer, aycoord.sender);
 	}
 
 	private void processAYC_answer(AYC_answer message) {
-		log("AYC_answer from " + this.ID + " by " + message.node.ID);
 		if (message.coord.ID != this.ID) {
+			// existe alguém que tem outro coordenador
+			log("AYC_answer received by me " + this.ID + " from " + message.node.ID + " say coord is " + message.coord);
 			this.others.add(message.coord);
 		}
 		this.waitingAnswerAYCoord--;
+		// se todo mundo respondeu e existe + 1 coordenador
 		if ((this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
 			this.timerToMerge = Global.currentTime + (Tools.getNodeList().size() * 10 + (10 - this.ID * 10));
-			log("ID: " + this.ID + " timer: " + this.timerToMerge + " actualy " + Global.currentTime);
+			log("SetUP timerToMerge " + this.ID + " STATUS " + this.state + " timerToMerge " + this.timerToMerge);
 		}
 	}
 
@@ -223,6 +226,7 @@ public class LeaderNode extends Node {
 			}
 			Accept accept = new Accept(this, this.coordenatorCount);
 			this.send(accept, message.coord);
+			this.timeAcceptInvitation = Global.currentTime;
 		}
 	}
 
@@ -248,6 +252,7 @@ public class LeaderNode extends Node {
 		this.state = 0;
 		this.others.clear();
 		this.timerToMerge = 0;
+		this.timeAcceptInvitation = 0;
 		log("Accept_answer from " + this.ID + " by " + message.sender.ID);
 	}
 
@@ -255,21 +260,22 @@ public class LeaderNode extends Node {
 
 	private void checkCoord() {
 		if (Global.currentTime % 100 == 0) {
-			if ((this.timeOutAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
+			if ((this.timeStartAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
 				AYThere aythere = new AYThere(this, this.coordenatorCount);
 				this.send(aythere, this.coordenatorGroup);
-				this.timeOutAYThere = Global.currentTime;
+				this.timeStartAYThere = Global.currentTime;
+				log("AYThere from " + this.coordenatorGroup.ID + " by " + this.ID);
 			}
 		}
 	}
 
 	private void timeOutAYThere() {
-		if (this.timeOutAYThere > 0) {
-			double temp = Global.currentTime - this.timeOutAYThere;
+		if (this.timeStartAYThere > 0) {
+			double temp = Global.currentTime - this.timeStartAYThere;
 			if ((this.state == 0) && (temp > this.timeOut)) {
-				this.timeOutAYThere = 0;
+				this.timeStartAYThere = 0;
 				log("Time out timeOutAYThere " + this.ID);
-				this.recovery();
+				this.recovery(" timeOutAYThere coord " + this.coordenatorGroup);
 			}
 		}
 
@@ -280,39 +286,47 @@ public class LeaderNode extends Node {
 		if (this.IamCoordenator()) {
 			if ((message.coordenatorCount == this.coordenatorCount) && (this.up.contains(message.sender))) {
 				ayt_answer = new AYThere_answer(this, true);
+				this.send(ayt_answer, message.sender);
 			} else {
 				ayt_answer = new AYThere_answer(this, false);
+				if (message.coordenatorCount > this.coordenatorCount) {
+					this.coordenatorCount = message.coordenatorCount;
+				}
+				this.send(ayt_answer, message.sender);
+				this.recovery("answerAYThere BY ME");
 			}
-			this.send(ayt_answer, message.sender);
 		}
 	}
 
-	private void recovery() {
-		this.state = 1;
+	private void recovery(String motive) {
+		log("Recorevy " + this.ID + " MOTIVO " + motive);
 		this.coordenatorCount++;
 		this.coordenatorGroup = this;
 		this.up = new ArrayList<Node>();
+		this.others = new ArrayList<Node>();
 		this.state = 0;
 	}
 
 	private void processAYThere_answer(AYThere_answer message) {
-		this.timeOutAYThere = 0;
+		this.timeStartAYThere = 0;
 		if (!message.answer) {
-			recovery();
+			recovery("AYThere_answer message false");
 		}
 
+	}
+
+	private void timeOutAcceptInvitation() {
+		if (this.timeAcceptInvitation > 0) {
+			double temp = Global.currentTime - this.timeAcceptInvitation;
+			if ((this.state == 1) && (temp > this.timeOut)) {
+				this.timeAcceptInvitation = 0;
+				log("timeOutAcceptInvitation " + this.ID + " time " + temp);
+				this.recovery("timeOutAcceptInvitation");
+			}
+		}
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
-
-	private boolean flipTheCoin() {
-		int num_randomico = randomGenerator.nextInt(100);
-		if (coinChancePositive > num_randomico) {
-			return true;
-		} else {
-			return false;
-		}
-	}
 
 	private void log(String message) {
 		if (this.log_on) {
