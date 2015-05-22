@@ -244,8 +244,8 @@
 		<QUDG rMin="30" rMax="50" ProbabilityType="constant" connectionProbability="0.6"/>
 		
 		<LossyDelivery DropRate="0"/>
-		<GeometricNodeCollection rMax="350"/>
-		<UDG rMax="350"/>
+		<GeometricNodeCollection rMax="400"/>
+		<UDG rMax="400"/>
 		
 		
 	</Custom>
