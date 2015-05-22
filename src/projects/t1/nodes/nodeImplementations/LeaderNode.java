@@ -131,10 +131,18 @@ public class LeaderNode extends Node {
 
 	/*-------------------------------------------------------------------------------------------------*/
 
+	private void checkTimerToMerge() {
+		if ((this.state == 0) && (this.timerToMerge == Global.currentTime)) {
+			log("Start merge " + this.ID);
+			this.merge();
+		}
+	}
+
 	private void merge() {
 		if ((this.IamCoordenator()) && (this.state == 0)) {
 			this.state = 1;
 			this.coordenatorCount++;
+			this.timerToMerge = 0;
 			this.upSet = this.up;
 			this.up = new ArrayList<Node>();
 			this.waitingAnswerInvitation = 0;
@@ -145,13 +153,6 @@ public class LeaderNode extends Node {
 			}
 			this.others.clear();
 			this.timeOutAnswerInvitation = Global.currentTime;
-		}
-	}
-
-	private void checkTimerToMerge() {
-		if ((this.state == 0) && (this.timerToMerge == Global.currentTime)) {
-			log("Start merge " + this.ID);
-			this.merge();
 		}
 	}
 
@@ -203,7 +204,7 @@ public class LeaderNode extends Node {
 		}
 		this.waitingAnswerAYCoord--;
 		// se todo mundo respondeu e existe + 1 coordenador
-		if ((this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
+		if ((this.timerToMerge < Global.currentTime) && (this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
 			this.timerToMerge = Global.currentTime + (Tools.getNodeList().size() * 10 + (10 - this.ID * 10));
 			log("SetUP timerToMerge " + this.ID + " STATUS " + this.state + " timerToMerge " + this.timerToMerge);
 		}
@@ -259,7 +260,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkCoord() {
-		if (Global.currentTime % 100 == 0) {
+		if (Global.currentTime % 200 == 0) {
 			if ((this.timeStartAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
 				AYThere aythere = new AYThere(this, this.coordenatorCount);
 				this.send(aythere, this.coordenatorGroup);
@@ -289,11 +290,7 @@ public class LeaderNode extends Node {
 				this.send(ayt_answer, message.sender);
 			} else {
 				ayt_answer = new AYThere_answer(this, false);
-				if (message.coordenatorCount > this.coordenatorCount) {
-					this.coordenatorCount = message.coordenatorCount;
-				}
 				this.send(ayt_answer, message.sender);
-				this.recovery("answerAYThere BY ME");
 			}
 		}
 	}
@@ -330,7 +327,10 @@ public class LeaderNode extends Node {
 
 	private void log(String message) {
 		if (this.log_on) {
-			System.out.println(message);
+			if (IamCoordenator())
+				System.out.println(Global.currentTime + "-N-" + this.ID + ": " + message);
+			else
+				System.out.println(Global.currentTime + "-C-" + this.ID + ": " + message);
 		}
 	}
 }
