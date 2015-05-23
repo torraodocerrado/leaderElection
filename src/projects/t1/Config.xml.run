@@ -125,7 +125,7 @@
 		<useMap value="true" />
 
 		<!--In 2D, the background can be colored depending on a map file. This field contains the file name for this map, which is supposed to be located in the source folder of the current project. The map is only painted if useMap is set to true.-->
-		<map value="images/rpo5.bmp" />
+		<map value="images/rpo7.bmp" />
 
 		<!--***********************************************************************-->
 		<!--  Models                                                               -->
@@ -240,8 +240,8 @@
 		<QUDG rMin="30" rMax="50" ProbabilityType="constant" connectionProbability="0.6"/>
 		
 		<LossyDelivery DropRate="0"/>
-		<GeometricNodeCollection rMax="400"/>
-		<UDG rMax="400"/>
+		<GeometricNodeCollection rMax="300"/>
+		<UDG rMax="300"/>
 		
 		
 		</Custom>

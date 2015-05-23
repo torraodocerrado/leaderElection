@@ -45,7 +45,10 @@ public class LeaderNode extends Node {
 	private int waitingAnswerInvitation = 0;
 	private double timeMerge = 0;
 
+	// coin
 	private Random randomGenerator;
+	private int coinChancePositive = 70;
+
 	private boolean log_on = true;
 
 	private double timeOut = 50;
@@ -161,7 +164,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkMembers() {
-		if (Global.currentTime % 200 == 0) {
+		if ((Global.currentTime % 50 == 0) && this.flipTheCoin()) {
 			if ((this.IamCoordenator()) && (this.waitingAnswerAYCoord == 0) && (this.state == 0)) {
 				this.others = new ArrayList<Node>();
 				AYCoord ayCoord = new AYCoord(this);
@@ -260,7 +263,8 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkCoord() {
-		if (Global.currentTime % 200 == 0) {
+
+		if ((Global.currentTime % 50 == 0) && this.flipTheCoin()) {
 			if ((this.timeStartAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
 				AYThere aythere = new AYThere(this, this.coordenatorCount);
 				this.send(aythere, this.coordenatorGroup);
@@ -320,6 +324,8 @@ public class LeaderNode extends Node {
 				// recovery("AYThere_answer message false : coord count: " +
 				// this.coordenatorCount + " message count: " +
 				// message.numCoord);
+			} else {
+				this.coordenatorCount = message.coordenatorCount;
 			}
 		}
 	}
@@ -345,4 +351,14 @@ public class LeaderNode extends Node {
 				System.out.println(Global.currentTime + "-C-" + this.ID + ": " + message);
 		}
 	}
+
+	private boolean flipTheCoin() {
+		int num_randomico = randomGenerator.nextInt(100);
+		if (coinChancePositive > num_randomico) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 }
