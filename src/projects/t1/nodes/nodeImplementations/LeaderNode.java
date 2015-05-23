@@ -2,9 +2,12 @@ package projects.t1.nodes.nodeImplementations;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 
+import projects.t1.LogFile;
 import projects.t1.nodes.messages.AYC_answer;
 import projects.t1.nodes.messages.AYCoord;
 import projects.t1.nodes.messages.AYThere;
@@ -24,6 +27,8 @@ public class LeaderNode extends Node {
 
 	// conjunto dos membros do proprio grupo
 	public ArrayList<Node> upSet;
+
+	public static LogFile fileLog;
 	// conjunto dos membros da uniao dos grupos
 	public ArrayList<Node> up;
 	// identificao do grupo (par [CoordID,count])
@@ -48,10 +53,9 @@ public class LeaderNode extends Node {
 	// coin
 	private Random randomGenerator;
 	private int coinChancePositive = 70;
-
 	private boolean log_on = true;
-
 	private double timeOut = 50;
+	private double waitConst = 50;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
@@ -100,6 +104,9 @@ public class LeaderNode extends Node {
 		this.coordenatorGroup = this;
 		this.setColor(Color.RED);
 		this.randomGenerator = new Random();
+		if (fileLog == null) {
+			fileLog = new LogFile(this.getNameFile());
+		}
 	}
 
 	@Override
@@ -119,6 +126,15 @@ public class LeaderNode extends Node {
 
 	@Override
 	public void postStep() {
+		if (this.IamCoordenator()) {
+			// if (Global.currentTime % 10 == 0) {
+			if (this.up.size() == (Tools.getNodeList().size() - 1)) {
+				fileLog.addStep(Global.currentTime, ((int) (Math.round(Global.currentTime))) + ";" + 1);
+			} else {
+				fileLog.addStep(Global.currentTime, ((int) (Math.round(Global.currentTime))) + ";" + 0);
+			}
+			// }
+		}
 	}
 
 	@Override
@@ -129,9 +145,6 @@ public class LeaderNode extends Node {
 		if (this.coordenatorGroup == null) {
 			this.coordenatorGroup = this;
 			return true;
-		}
-		if (this.ID != this.coordenatorGroup.ID) {
-			System.out.println(Global.currentTime + "-N-" + this.ID + ": coord id: " + this.coordenatorGroup.ID);
 		}
 		return this.ID == this.coordenatorGroup.ID;
 	}
@@ -172,7 +185,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkMembers() {
-		if ((Global.currentTime % 50 == 0) && this.flipTheCoin()) {
+		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
 			if ((this.IamCoordenator()) && (this.waitingAnswerAYCoord == 0) && (this.state == 0)) {
 				this.others = new ArrayList<Node>();
 				AYCoord ayCoord = new AYCoord(this);
@@ -271,7 +284,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkCoord() {
-		if ((Global.currentTime % 50 == 0) && this.flipTheCoin()) {
+		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
 			if ((this.timeStartAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
 				AYThere aythere = new AYThere(this, this.coordenatorCount);
 				this.send(aythere, this.coordenatorGroup);
@@ -363,4 +376,10 @@ public class LeaderNode extends Node {
 		}
 	}
 
+	private String getNameFile() {
+		String prefixo = "0.025_";
+		SimpleDateFormat ft = new SimpleDateFormat("dd-MM-yyyy-'at'-hh-mm-ss-SSS-a");
+		Date today = new Date();
+		return prefixo + ft.format(today) + "_report.csv";
+	}
 }

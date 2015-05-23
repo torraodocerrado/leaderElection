@@ -33,7 +33,7 @@
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 package projects.t1.models.reliabilityModels;
 
 import sinalgo.configuration.Configuration;
@@ -46,23 +46,31 @@ import sinalgo.tools.statistics.Distribution;
 /**
  * A loossy reliability model that drops messages with a constant probability.
  * <p>
- * The percentage of dropped messages has to be specified in the configuration file:
+ * The percentage of dropped messages has to be specified in the configuration
+ * file:
  * <p>
  * &lt;LossyDelivery dropRate="..."/&gt;
  */
 public class LossyDelivery extends ReliabilityModel {
 	java.util.Random rand = Distribution.getRandom();
 	private double dropRate = 0;
-	
-	
-	/* (non-Javadoc)
-	 * @see sinalgo.models.ReliabilityModel#reachesDestination(sinalgo.nodes.messages.Packet)
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * sinalgo.models.ReliabilityModel#reachesDestination(sinalgo.nodes.messages
+	 * .Packet)
 	 */
-	public boolean reachesDestination(Packet p){ 
+	@Override
+	public boolean reachesDestination(Packet p) {
 		double r = rand.nextDouble();
-		return(r > dropRate);
+		if ((r < dropRate)) {
+			System.out.println("Perdeu pacote origem: " + p.origin.ID + " destino: " + p.destination.ID);
+		}
+		return (r > dropRate);
 	}
-	
+
 	/**
 	 * Creates a new Drop Rate Reliability Model instance.
 	 */
