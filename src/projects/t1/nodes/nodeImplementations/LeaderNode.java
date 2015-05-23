@@ -126,10 +126,14 @@ public class LeaderNode extends Node {
 	}
 
 	private boolean IamCoordenator() {
-		if (this.coordenatorGroup == null)
-			return false;
-		else
-			return this.ID == this.coordenatorGroup.ID;
+		if (this.coordenatorGroup == null) {
+			this.coordenatorGroup = this;
+			return true;
+		}
+		if (this.ID != this.coordenatorGroup.ID) {
+			System.out.println(Global.currentTime + "-N-" + this.ID + ": coord id: " + this.coordenatorGroup.ID);
+		}
+		return this.ID == this.coordenatorGroup.ID;
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
@@ -149,13 +153,17 @@ public class LeaderNode extends Node {
 			this.upSet = this.up;
 			this.up = new ArrayList<Node>();
 			this.waitingAnswerInvitation = 0;
+			Invitation message = new Invitation(this, this.coordenatorCount);
 			for (Node no : this.others) {
 				this.waitingAnswerInvitation++;
-				Invitation message = new Invitation(this, this.coordenatorCount);
 				log("Invitation from from " + no.ID);
 				this.send(message, no);
 			}
-			this.others.clear();
+			for (Node no : this.upSet) {
+				this.waitingAnswerInvitation++;
+				log("Invitation from from " + no.ID);
+				this.send(message, no);
+			}
 			this.timeOutAnswerInvitation = Global.currentTime;
 			this.timeMerge = Global.currentTime;
 		}
@@ -204,7 +212,7 @@ public class LeaderNode extends Node {
 		if (message.coord.ID != this.ID) {
 			// existe alguém que tem outro coordenador
 			log("AYC_answer by " + message.node.ID + " say coord is " + message.coord);
-			this.others.add(message.coord);
+			this.others.add(message.node);
 		}
 		this.waitingAnswerAYCoord--;
 		// se todo mundo respondeu e existe + 1 coordenador
@@ -217,11 +225,11 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void answerInvitation(Invitation message) {
-		if ((IamCoordenator()) && (this.state == 0)) {
+		if (this.state == 0) {
 			this.oldCoordenatorGroup = this.coordenatorGroup;
 			this.upSet = this.up;
 			this.state = 1;
-			this.coordenatorGroup = message.coord;
+			this.coordenatorGroup = message.coordenator;
 			this.coordenatorCount = message.coordenatorCount;
 			if (this.oldCoordenatorGroup == this) {
 				for (Node no : this.upSet) {
@@ -229,7 +237,7 @@ public class LeaderNode extends Node {
 				}
 			}
 			Accept accept = new Accept(this, this.coordenatorCount);
-			this.send(accept, message.coord);
+			this.send(accept, message.coordenator);
 			this.timeMerge = Global.currentTime;
 		}
 	}
@@ -263,7 +271,6 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkCoord() {
-
 		if ((Global.currentTime % 50 == 0) && this.flipTheCoin()) {
 			if ((this.timeStartAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
 				AYThere aythere = new AYThere(this, this.coordenatorCount);
@@ -321,11 +328,6 @@ public class LeaderNode extends Node {
 		if (!IamCoordenator()) {
 			if (message.answer) {
 				this.timeStartAYThere = 0;
-				// recovery("AYThere_answer message false : coord count: " +
-				// this.coordenatorCount + " message count: " +
-				// message.numCoord);
-			} else {
-				this.coordenatorCount = message.coordenatorCount;
 			}
 		}
 	}
