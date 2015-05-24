@@ -71,7 +71,6 @@ public final class LogFile {
 		if (this.step < currentTime) {
 			this.step = currentTime;
 			this.add(linhe);
-			this.ln();
 		}
 
 	}

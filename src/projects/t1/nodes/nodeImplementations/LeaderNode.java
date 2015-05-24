@@ -72,41 +72,41 @@ public class LeaderNode extends Node {
 		while (inbox.hasNext()) {
 			Message message = inbox.next();
 			if (message instanceof AYCoord) {
-				log("AYCoord by " + ((AYCoord) message).sender.ID);
+				log("Received MSG AYCoord by " + ((AYCoord) message).sender.ID);
 				this.answerAYCoord((AYCoord) message);
 			}
 
 			if (message instanceof AYC_answer) {
-				log("AYC_answer by " + ((AYC_answer) message).sender.ID);
+				log("Received MSG AYC_answer by " + ((AYC_answer) message).sender.ID);
 				this.processAYC_answer((AYC_answer) message);
 			}
 			if (message instanceof Invitation) {
-				log("Invitation by " + ((Invitation) message).sender.ID);
+				log("Received MSG Invitation by " + ((Invitation) message).sender.ID);
 				this.answerInvitation((Invitation) message);
 			}
 			if (message instanceof Accept) {
-				log("Accept by " + ((Accept) message).sender.ID);
+				log("Received MSG Accept by " + ((Accept) message).sender.ID);
 				this.answerAccept((Accept) message);
 			}
 			if (message instanceof Accept_answer) {
-				log("Accept_answer by " + ((Accept_answer) message).sender.ID);
+				log("Received MSG Accept_answer by " + ((Accept_answer) message).sender.ID);
 				this.processAccept_answer((Accept_answer) message);
 			}
 
 			if (message instanceof AYThere) {
-				log("AYThere by " + ((AYThere) message).sender.ID);
+				log("Received MSG AYThere by " + ((AYThere) message).sender.ID);
 				this.answerAYThere((AYThere) message);
 			}
 			if (message instanceof AYThere_answer) {
-				log("AYThere_answer by " + ((AYThere_answer) message).sender.ID);
+				log("Received MSG AYThere_answer by " + ((AYThere_answer) message).sender.ID);
 				this.processAYThere_answer((AYThere_answer) message);
 			}
 			if (message instanceof Ready) {
-				log("Ready by " + ((Ready) message).sender.ID);
+				log("Received MSG Ready by " + ((Ready) message).sender.ID);
 				this.answerReady((Ready) message);
 			}
 			if (message instanceof Ready_answer) {
-				log("Ready_answer by " + ((Ready_answer) message).sender.ID);
+				log("Received MSG Ready_answer by " + ((Ready_answer) message).sender.ID);
 				this.processReady_answer((Ready_answer) message);
 			}
 
@@ -156,8 +156,10 @@ public class LeaderNode extends Node {
 
 	@Override
 	public void postStep() {
+		this.messages += Global.numberOfMessagesInThisRound;
+		this.rounds++;
 		if (this.IamCoordenator()) {
-			if (this.up.size() == (Tools.getNodeList().size() - 1)) {
+			if ((this.up.size() == (Tools.getNodeList().size() - 1)) && (this.state == 0)) {
 				if (this.isFirstStableStep) {
 					this.messages += Global.numberOfMessagesInThisRound;
 					fileLog.addStep(Global.currentTime, ((int) (Math.round(Global.currentTime))) + ";" + 1 + ";" + this.messages + ";" + Tools.getNodeList().size() + ";" + this.rounds);
@@ -171,8 +173,6 @@ public class LeaderNode extends Node {
 				// this.messages + ";" + Tools.getNodeList().size() + ";");
 			}
 		}
-		this.messages += Global.numberOfMessagesInThisRound;
-		this.rounds++;
 	}
 
 	@Override
@@ -236,7 +236,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkMembers() {
-		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
+		if ((this.rounds % this.waitConst == 0) && this.flipTheCoin()) {
 			if ((this.IamCoordenator()) && (this.waitingAnswerAYCoord == 0) && (this.state == 0)) {
 				this.others = new ArrayList<Node>();
 				AYCoord ayCoord = new AYCoord(this);
@@ -274,7 +274,7 @@ public class LeaderNode extends Node {
 
 	private void processAYC_answer(AYC_answer message) {
 		if (message.coord.ID != this.ID) {
-			log("AYC_answer by " + message.sender.ID + " say coord is " + message.coord);
+			log("AYC_answer by " + message.sender.ID + " said your coord is " + message.coord);
 			this.others.add(message.sender);
 		}
 		this.waitingAnswerAYCoord--;
@@ -346,7 +346,7 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkCoord() {
-		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
+		if ((this.rounds % this.waitConst == 0) && this.flipTheCoin()) {
 			if ((this.timeStartAYThere == 0) && (this.state == 0) && (!this.IamCoordenator())) {
 				AYThere aythere = new AYThere(this, this.coordenatorCount);
 				this.send(aythere, this.coordenatorGroup);
@@ -433,9 +433,9 @@ public class LeaderNode extends Node {
 	private void log(String message) {
 		if (this.log_on) {
 			if (IamCoordenator())
-				System.out.println(Global.currentTime + "-N-" + this.ID + ": " + message);
+				System.out.println("STEP " + ((int) (Math.round(Global.currentTime))) + "- Node  " + this.ID + ": " + message);
 			else
-				System.out.println(Global.currentTime + "-C-" + this.ID + ": " + message);
+				System.out.println("STEP " + ((int) (Math.round(Global.currentTime))) + "- Coord " + this.ID + ": " + message);
 		}
 	}
 

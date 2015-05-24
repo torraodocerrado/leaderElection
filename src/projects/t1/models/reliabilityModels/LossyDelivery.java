@@ -41,6 +41,7 @@ import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.models.ReliabilityModel;
 import sinalgo.nodes.messages.Packet;
 import sinalgo.runtime.Main;
+import sinalgo.tools.Tools;
 import sinalgo.tools.statistics.Distribution;
 
 /**
@@ -65,10 +66,33 @@ public class LossyDelivery extends ReliabilityModel {
 	@Override
 	public boolean reachesDestination(Packet p) {
 		double r = rand.nextDouble();
-		if ((r < dropRate)) {
+		if (isSameGroup(p)) {
+			System.out.println("Entregou pacote origem: " + p.origin.ID + " destino: " + p.destination.ID);
+			return true;
+		} else {
 			System.out.println("Perdeu pacote origem: " + p.origin.ID + " destino: " + p.destination.ID);
+			return false;
 		}
-		return (r > dropRate);
+		// if ((r < dropRate)) {
+		// System.out.println("Perdeu pacote origem: " + p.origin.ID +
+		// " destino: " + p.destination.ID);
+		// }
+		// return (r > dropRate);
+	}
+
+	public boolean isSameGroup(Packet p) {
+		return getGroup(p.origin.ID) == getGroup(p.destination.ID);
+	}
+
+	private int getGroup(int idNode) {
+		int sizeGroup = (Tools.getNodeList().size() / 3);
+		if ((idNode <= sizeGroup)) {
+			return 1;
+		}
+		if ((idNode > sizeGroup) && (idNode <= (sizeGroup * 2))) {
+			return 2;
+		}
+		return 3;
 	}
 
 	/**
