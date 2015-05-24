@@ -4,7 +4,7 @@ import sinalgo.nodes.Node;
 import sinalgo.nodes.messages.Message;
 
 public class Invitation extends Message {
-	public Node coordenator;
+	public Node sender;
 	public int coordenatorCount;
 
 	@Override
@@ -13,7 +13,7 @@ public class Invitation extends Message {
 	}
 
 	public Invitation(Node coordenator, int coordenatorCount) {
-		this.coordenator = coordenator;
+		this.sender = coordenator;
 		this.coordenatorCount = coordenatorCount;
 	}
 

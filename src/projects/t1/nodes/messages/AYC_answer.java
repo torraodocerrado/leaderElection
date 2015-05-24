@@ -5,17 +5,17 @@ import sinalgo.nodes.messages.Message;
 
 public class AYC_answer extends Message {
 	public Node coord;
-	public Node node;
+	public Node sender;
 
 	@Override
 	public Message clone() {
 		return this;
 	}
 
-	public AYC_answer(Node node, Node coord) {
-		this.node = node;
+	public AYC_answer(Node sender, Node coord) {
+		this.sender = sender;
 		if (coord == null)
-			this.coord = node;
+			this.coord = sender;
 		else
 			this.coord = coord;
 	}
