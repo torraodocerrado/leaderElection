@@ -56,7 +56,8 @@ public class LossyDelivery extends ReliabilityModel {
 	private static double step = 0;
 
 	private double timeOffLine = 500;
-	private double dropRate = 0.08;
+	private double dropRate = 0.025;
+	private int numGroups = 3;
 
 	/*
 	 * (non-Javadoc)
@@ -87,12 +88,25 @@ public class LossyDelivery extends ReliabilityModel {
 		return getGroup(p.origin.ID) == getGroup(p.destination.ID);
 	}
 
-	private static int getGroup(int idNode) {
-		int sizeGroup = (Tools.getNodeList().size() / 2);
-		if ((idNode <= sizeGroup)) {
+	private int getGroup(int idNode) {
+		int sizeGroup = (Tools.getNodeList().size() / this.numGroups);
+		switch (this.numGroups) {
+		case 2:
+			if ((idNode <= sizeGroup)) {
+				return 1;
+			} else {
+				return 2;
+			}
+		case 3:
+			if ((idNode <= sizeGroup)) {
+				return 1;
+			}
+			if ((idNode > sizeGroup) && (idNode <= (sizeGroup * 2))) {
+				return 2;
+			}
+			return 3;
+		default:
 			return 1;
-		} else {
-			return 2;
 		}
 	}
 
