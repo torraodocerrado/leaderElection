@@ -45,8 +45,9 @@ public class LeaderNode extends Node {
 	private double timeStartAYThere = 0;
 	// Tipo do estado: 0 - 'Normal' | 1 - 'Election' | 2 'Reorganizing'
 	private int state = 0;
-	// contadores de mensagens
-	private int waitingAnswerAYCoord = 0;
+	// AnswerAYCoord
+	private int timeAnswerAYCoord = 4;
+	private boolean waitingAnswerAYCoord = false;
 	// AnswerInvitation
 	private double timeOutAnswerInvitation = 0;
 	private int waitingAnswerInvitation = 0;
@@ -141,6 +142,7 @@ public class LeaderNode extends Node {
 		this.upSet = new ArrayList<Node>();
 		this.others = new ArrayList<Node>();
 		this.coordenatorGroup = this;
+		this.coordenatorCount = 1;
 		this.setColor(Color.RED);
 		this.randomGenerator = new Random();
 		if (fileLog == null) {
@@ -151,6 +153,7 @@ public class LeaderNode extends Node {
 		this.isFirstStableStep = true;
 		this.messages = 0;
 		this.rounds = 0;
+		this.waitingAnswerAYCoord = false;
 		log("new round");
 	}
 
@@ -236,23 +239,34 @@ public class LeaderNode extends Node {
 	/*-------------------------------------------------------------------------------------------------*/
 
 	private void checkMembers() {
-		if ((this.rounds % this.waitConst == 0) && this.flipTheCoin()) {
-			if ((this.IamCoordenator()) && (this.waitingAnswerAYCoord == 0) && (this.state == 0)) {
+		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
+			if ((this.IamCoordenator()) && (!this.waitingAnswerAYCoord) && (this.state == 0)) {
 				this.others = new ArrayList<Node>();
 				AYCoord ayCoord = new AYCoord(this);
 				this.broadcast(ayCoord);
-				this.waitingAnswerAYCoord = this.outgoingConnections.size();
+				if (this.outgoingConnections.size() > 0) {
+					this.waitingAnswerAYCoord = true;
+				}
 				this.timeAYCoord = Global.currentTime;
 			}
 		}
 	}
 
 	private void timeOutAYCoord() {
-		double temp = Global.currentTime - this.timeAYCoord;
-		if ((this.state == 0) && (this.waitingAnswerAYCoord > 0) && (temp > this.timeOut)) {
-			this.waitingAnswerAYCoord = 0;
-			this.timeAYCoord = 0;
-			log("time out AYCoord " + this.ID);
+		if ((this.state == 0) && (this.waitingAnswerAYCoord)) {
+			double temp = Global.currentTime - this.timeAYCoord;
+			log("(temp > this.timeAnswerAYCoord)=" + (temp > this.timeAnswerAYCoord));
+			log("(this.timerToMerge < Global.currentTime) " + (this.timerToMerge < Global.currentTime));
+			log("(this.others.size() > 0) " + (this.others.size() > 0));
+			if ((temp > this.timeAnswerAYCoord) && (this.timerToMerge < Global.currentTime)) {
+				if (this.others.size() > 0) {
+					this.waitingAnswerAYCoord = false;
+					this.timerToMerge = Global.currentTime + (Tools.getNodeList().size() * 10 + (10 - this.ID * 10));
+					log("SetUP timerToMerge " + this.ID + " STATUS " + this.state + " timerToMerge " + this.timerToMerge);
+				} else {
+					this.waitingAnswerAYCoord = false;
+				}
+			}
 		}
 	}
 
@@ -276,12 +290,6 @@ public class LeaderNode extends Node {
 		if (message.coord.ID != this.ID) {
 			log("AYC_answer by " + message.sender.ID + " said your coord is " + message.coord);
 			this.others.add(message.sender);
-		}
-		this.waitingAnswerAYCoord--;
-		// se todo mundo respondeu e existe + 1 coordenador
-		if ((this.timerToMerge < Global.currentTime) && (this.waitingAnswerAYCoord == 0) && (this.others.size() > 0)) {
-			this.timerToMerge = Global.currentTime + (Tools.getNodeList().size() * 10 + (10 - this.ID * 10));
-			log("SetUP timerToMerge " + this.ID + " STATUS " + this.state + " timerToMerge " + this.timerToMerge);
 		}
 	}
 
@@ -389,7 +397,7 @@ public class LeaderNode extends Node {
 		this.timeAYCoord = 0;
 		this.timerToMerge = 0;
 		this.timeStartAYThere = 0;
-		this.waitingAnswerAYCoord = 0;
+		this.waitingAnswerAYCoord = false;
 		this.timeOutAnswerInvitation = 0;
 		this.waitingAnswerInvitation = 0;
 		this.timeMerge = 0;

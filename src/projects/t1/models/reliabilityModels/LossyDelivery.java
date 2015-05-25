@@ -36,13 +36,12 @@
  */
 package projects.t1.models.reliabilityModels;
 
-import sinalgo.configuration.Configuration;
-import sinalgo.configuration.CorruptConfigurationEntryException;
+import java.util.Random;
+
 import sinalgo.models.ReliabilityModel;
 import sinalgo.nodes.messages.Packet;
-import sinalgo.runtime.Main;
+import sinalgo.runtime.Global;
 import sinalgo.tools.Tools;
-import sinalgo.tools.statistics.Distribution;
 
 /**
  * A loossy reliability model that drops messages with a constant probability.
@@ -53,8 +52,16 @@ import sinalgo.tools.statistics.Distribution;
  * &lt;LossyDelivery dropRate="..."/&gt;
  */
 public class LossyDelivery extends ReliabilityModel {
-	java.util.Random rand = Distribution.getRandom();
-	private double dropRate = 0;
+	private Random randomGenerator;
+	private int coinChancePositive = 98;
+	private double timeDisablePart1 = 0;
+	private double timeDisablePart2 = 0;
+	private double timeDisablePart3 = 0;
+	private double timeOffLine = 100;
+
+	public LossyDelivery() {
+		this.randomGenerator = new Random();
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -65,19 +72,43 @@ public class LossyDelivery extends ReliabilityModel {
 	 */
 	@Override
 	public boolean reachesDestination(Packet p) {
-		double r = rand.nextDouble();
 		if (isSameGroup(p)) {
-			System.out.println("Entregou pacote origem: " + p.origin.ID + " destino: " + p.destination.ID);
 			return true;
-		} else {
-			System.out.println("Perdeu pacote origem: " + p.origin.ID + " destino: " + p.destination.ID);
-			return false;
 		}
-		// if ((r < dropRate)) {
-		// System.out.println("Perdeu pacote origem: " + p.origin.ID +
-		// " destino: " + p.destination.ID);
-		// }
-		// return (r > dropRate);
+
+		// GROUP 1
+		if ((this.timeDisablePart1 < Global.currentTime) && (this.flipTheCoin())) {
+			this.timeDisablePart1 = Global.currentTime + this.timeOffLine;
+			System.out.println("Desabilitou grupo 1 até o round " + this.timeDisablePart1);
+		}
+
+		// GROUP 2
+		if ((this.timeDisablePart2 < Global.currentTime) && (this.flipTheCoin())) {
+			this.timeDisablePart2 = Global.currentTime + this.timeOffLine;
+			System.out.println("Desabilitou grupo 2 até o round " + this.timeDisablePart2);
+		}
+
+		// GROUP 3
+		if ((this.timeDisablePart3 < Global.currentTime) && (this.flipTheCoin())) {
+			this.timeDisablePart3 = Global.currentTime + this.timeOffLine;
+			System.out.println("Desabilitou grupo 3 até o round " + this.timeDisablePart3);
+		}
+
+		int part = this.getGroup(p.destination.ID);
+		switch (part) {
+		case 1:
+			System.out.println("ID " + p.destination.ID + " " + this.timeDisablePart1 + " " + Global.currentTime);
+			return this.timeDisablePart1 < Global.currentTime;
+		case 2:
+			System.out.println("ID " + p.destination.ID + " " + this.timeDisablePart2 + " " + Global.currentTime);
+			return this.timeDisablePart2 < Global.currentTime;
+		case 3:
+			System.out.println("ID " + p.destination.ID + " " + this.timeDisablePart3 + " " + Global.currentTime);
+			return this.timeDisablePart3 < Global.currentTime;
+		default:
+			return true;
+		}
+
 	}
 
 	public boolean isSameGroup(Packet p) {
@@ -95,14 +126,13 @@ public class LossyDelivery extends ReliabilityModel {
 		return 3;
 	}
 
-	/**
-	 * Creates a new Drop Rate Reliability Model instance.
-	 */
-	public LossyDelivery() {
-		try {
-			dropRate = Configuration.getDoubleParameter("LossyDelivery/dropRate");
-		} catch (CorruptConfigurationEntryException e) {
-			Main.fatalError("Missing configuration entry for the Message Transmission Model:\n" + e.getMessage());
+	private boolean flipTheCoin() {
+		int num_randomico = randomGenerator.nextInt(100);
+		if (coinChancePositive < num_randomico) {
+			return true;
+		} else {
+			return false;
 		}
 	}
+
 }
