@@ -67,6 +67,9 @@ public class LeaderNode extends Node {
 	private boolean isFirstStableStep;
 	private int messages = 0;
 	private int rounds = 0;
+	private static int instableGlobal = 0;
+	private static int instableLocal = 0;
+	private static boolean hasOneInstable = false;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
@@ -120,20 +123,19 @@ public class LeaderNode extends Node {
 		}
 		if (this.waitingAnswerReorganizing == 0) {
 			this.state = 0;
+			this.waitingAnswerAYCoord = false;
 			this.timeOutAnswerReorganizing = 0;
-		}
-	}
+			// String logLine = ((int) (Math.round(Global.currentTime))) + ";" +
+			// this.ID + "|" + this.coordenatorCount + ";" + this.up.size() +
+			// ";";
+			// for (Node no : this.up) {
+			// logLine += no.ID + "  ";
+			// }
+			// logLine += ";";
+			// fileLog.add(logLine);
+			// fileLog.ln();
 
-	@Override
-	public void preStep() {
-		this.checkMembers();
-		this.checkCoord();
-		this.checkTimerToMerge();
-		this.timeOutAYCoord();
-		this.timeOutAYThere();
-		this.timeOutMerge();
-		this.timeOutReorganizing();
-		this.timeOutAnswerInvitation();
+		}
 	}
 
 	@Override
@@ -147,7 +149,7 @@ public class LeaderNode extends Node {
 		this.randomGenerator = new Random();
 		if (fileLog == null) {
 			fileLog = new LogFile(this.getNameFile());
-			fileLog.add("step;status;mensagens;qtdNos;rounds");
+			fileLog.add("step;qtdNosInstaveis;qtdRoundsNosInstaveis");
 			fileLog.ln();
 		}
 		this.isFirstStableStep = true;
@@ -158,24 +160,55 @@ public class LeaderNode extends Node {
 	}
 
 	@Override
+	public void preStep() {
+		if ((this.state > 0)) {
+			instableGlobal++;
+			hasOneInstable = true;
+		}
+		this.checkMembers();
+		this.checkCoord();
+		this.checkTimerToMerge();
+		this.timeOutAYCoord();
+		this.timeOutAYThere();
+		this.timeOutMerge();
+		this.timeOutReorganizing();
+		this.timeOutAnswerInvitation();
+	}
+
+	@Override
 	public void postStep() {
 		this.messages += Global.numberOfMessagesInThisRound;
 		this.rounds++;
-		if (this.IamCoordenator()) {
-			if ((this.up.size() == (Tools.getNodeList().size() - 1)) && (this.state == 0)) {
-				if (this.isFirstStableStep) {
-					this.messages += Global.numberOfMessagesInThisRound;
-					fileLog.addStep(Global.currentTime, ((int) (Math.round(Global.currentTime))) + ";" + 1 + ";" + this.messages + ";" + Tools.getNodeList().size() + ";" + this.rounds);
-					fileLog.addStep(Global.currentTime, ((int) (Math.round(Global.currentTime))) + ";" + 1 + ";" + this.messages + ";" + Tools.getNodeList().size() + ";" + this.rounds);
-					this.isFirstStableStep = false;
-					fileLog.ln();
-				}
-			} else {
-				// fileLog.addStep(Global.currentTime, ((int)
-				// (Math.round(Global.currentTime))) + ";" + 0 + ";" +
-				// this.messages + ";" + Tools.getNodeList().size() + ";");
+		// REPORT
+		if ((this.ID % Tools.getNodeList().size() == 0)) {
+			if (hasOneInstable) {
+				instableLocal++;
+				hasOneInstable = false;
+			}
+			if ((Global.currentTime % 100 == 0)) {
+				fileLog.add(((int) (Math.round(Global.currentTime))) + ";" + instableGlobal + ";" + instableLocal);
+				fileLog.ln();
+				instableGlobal = 0;
+				instableLocal = 0;
 			}
 		}
+		// if (this.IamCoordenator()) {
+		// if ((this.up.size() == (Tools.getNodeList().size() - 1)) &&
+		// (this.state == 0)) {
+		// if (this.isFirstStableStep) {
+		// this.messages += Global.numberOfMessagesInThisRound;
+		// fileLog.addStep(Global.currentTime, ((int)
+		// (Math.round(Global.currentTime))) + ";" + 1 + ";" + this.messages +
+		// ";" + Tools.getNodeList().size() + ";" + this.rounds);
+		// this.isFirstStableStep = false;
+		// fileLog.ln();
+		// }
+		// } else {
+		// // fileLog.addStep(Global.currentTime, ((int)
+		// // (Math.round(Global.currentTime))) + ";" + 0 + ";" +
+		// // this.messages + ";" + Tools.getNodeList().size() + ";");
+		// }
+		// }
 	}
 
 	@Override
@@ -255,9 +288,6 @@ public class LeaderNode extends Node {
 	private void timeOutAYCoord() {
 		if ((this.state == 0) && (this.waitingAnswerAYCoord)) {
 			double temp = Global.currentTime - this.timeAYCoord;
-			log("(temp > this.timeAnswerAYCoord)=" + (temp > this.timeAnswerAYCoord));
-			log("(this.timerToMerge < Global.currentTime) " + (this.timerToMerge < Global.currentTime));
-			log("(this.others.size() > 0) " + (this.others.size() > 0));
 			if ((temp > this.timeAnswerAYCoord) && (this.timerToMerge < Global.currentTime)) {
 				if (this.others.size() > 0) {
 					this.waitingAnswerAYCoord = false;

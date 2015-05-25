@@ -146,7 +146,7 @@
 		<DefaultMobilityModel value="NoMobility" />
 
 		<!--Default reliability model used when none is specified-->
-		<DefaultReliabilityModel value="ReliableDelivery" />
+		<DefaultReliabilityModel value="t1:LossyDelivery" />
 
 		<!--Default node implementation used when none is specified-->
 		<DefaultNodeImplementation value="t1:LeaderNode" />
@@ -223,8 +223,7 @@
 		<!--The dsfault value of the rounds field.-->
 		<defaultRoundNumber value="1" />
 
-		<!--Default reliability model used when none is specified-->
-		<!--<DefaultReliabilityModel value="LossyDelivery" />-->
+		
 
 
 	</Framework>

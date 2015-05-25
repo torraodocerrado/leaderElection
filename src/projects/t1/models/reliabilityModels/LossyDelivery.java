@@ -36,12 +36,11 @@
  */
 package projects.t1.models.reliabilityModels;
 
-import java.util.Random;
-
 import sinalgo.models.ReliabilityModel;
 import sinalgo.nodes.messages.Packet;
 import sinalgo.runtime.Global;
 import sinalgo.tools.Tools;
+import sinalgo.tools.statistics.Distribution;
 
 /**
  * A loossy reliability model that drops messages with a constant probability.
@@ -52,16 +51,12 @@ import sinalgo.tools.Tools;
  * &lt;LossyDelivery dropRate="..."/&gt;
  */
 public class LossyDelivery extends ReliabilityModel {
-	private Random randomGenerator;
-	private int coinChancePositive = 98;
-	private double timeDisablePart1 = 0;
-	private double timeDisablePart2 = 0;
-	private double timeDisablePart3 = 0;
-	private double timeOffLine = 100;
+	java.util.Random rand = Distribution.getRandom();
+	private static double timeDisablePart = 0;
+	private static double step = 0;
 
-	public LossyDelivery() {
-		this.randomGenerator = new Random();
-	}
+	private double timeOffLine = 500;
+	private double dropRate = 0.08;
 
 	/*
 	 * (non-Javadoc)
@@ -76,38 +71,15 @@ public class LossyDelivery extends ReliabilityModel {
 			return true;
 		}
 
-		// GROUP 1
-		if ((this.timeDisablePart1 < Global.currentTime) && (this.flipTheCoin())) {
-			this.timeDisablePart1 = Global.currentTime + this.timeOffLine;
-			System.out.println("Desabilitou grupo 1 até o round " + this.timeDisablePart1);
+		if (step < Global.currentTime) {
+			step = Global.currentTime;
+			if ((timeDisablePart < Global.currentTime) && (this.flipTheCoin())) {
+				timeDisablePart = Global.currentTime + this.timeOffLine;
+				System.out.println("Desabilitou os grupos até o round " + timeDisablePart);
+			}
 		}
 
-		// GROUP 2
-		if ((this.timeDisablePart2 < Global.currentTime) && (this.flipTheCoin())) {
-			this.timeDisablePart2 = Global.currentTime + this.timeOffLine;
-			System.out.println("Desabilitou grupo 2 até o round " + this.timeDisablePart2);
-		}
-
-		// GROUP 3
-		if ((this.timeDisablePart3 < Global.currentTime) && (this.flipTheCoin())) {
-			this.timeDisablePart3 = Global.currentTime + this.timeOffLine;
-			System.out.println("Desabilitou grupo 3 até o round " + this.timeDisablePart3);
-		}
-
-		int part = this.getGroup(p.destination.ID);
-		switch (part) {
-		case 1:
-			System.out.println("ID " + p.destination.ID + " " + this.timeDisablePart1 + " " + Global.currentTime);
-			return this.timeDisablePart1 < Global.currentTime;
-		case 2:
-			System.out.println("ID " + p.destination.ID + " " + this.timeDisablePart2 + " " + Global.currentTime);
-			return this.timeDisablePart2 < Global.currentTime;
-		case 3:
-			System.out.println("ID " + p.destination.ID + " " + this.timeDisablePart3 + " " + Global.currentTime);
-			return this.timeDisablePart3 < Global.currentTime;
-		default:
-			return true;
-		}
+		return timeDisablePart < Global.currentTime;
 
 	}
 
@@ -115,20 +87,18 @@ public class LossyDelivery extends ReliabilityModel {
 		return getGroup(p.origin.ID) == getGroup(p.destination.ID);
 	}
 
-	private int getGroup(int idNode) {
-		int sizeGroup = (Tools.getNodeList().size() / 3);
+	private static int getGroup(int idNode) {
+		int sizeGroup = (Tools.getNodeList().size() / 2);
 		if ((idNode <= sizeGroup)) {
 			return 1;
-		}
-		if ((idNode > sizeGroup) && (idNode <= (sizeGroup * 2))) {
+		} else {
 			return 2;
 		}
-		return 3;
 	}
 
 	private boolean flipTheCoin() {
-		int num_randomico = randomGenerator.nextInt(100);
-		if (coinChancePositive < num_randomico) {
+		double r = rand.nextDouble();
+		if ((r < dropRate)) {
 			return true;
 		} else {
 			return false;

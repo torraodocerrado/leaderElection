@@ -146,7 +146,7 @@
 		<DefaultMobilityModel value="NoMobility" />
 
 		<!--Default reliability model used when none is specified-->
-		<DefaultReliabilityModel value="LossyDelivery" />
+		<DefaultReliabilityModel value="t1.LossyDelivery" />
 
 		<!--Default node implementation used when none is specified-->
 		<DefaultNodeImplementation value="sample3:RMobileNode" />
