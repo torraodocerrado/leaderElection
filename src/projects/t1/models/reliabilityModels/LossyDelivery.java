@@ -56,7 +56,7 @@ public class LossyDelivery extends ReliabilityModel {
 	private static double step = 0;
 
 	private double timeOffLine = 500;
-	private double dropRate = 0.025;
+	private double dropRate = 0.08;
 	private int numGroups = 3;
 
 	/*
@@ -105,6 +105,17 @@ public class LossyDelivery extends ReliabilityModel {
 				return 2;
 			}
 			return 3;
+		case 4:
+			if ((idNode <= sizeGroup)) {
+				return 1;
+			}
+			if ((idNode > sizeGroup) && (idNode <= (sizeGroup * 2))) {
+				return 2;
+			}
+			if ((idNode > (sizeGroup * 2)) && (idNode <= (sizeGroup * 3))) {
+				return 3;
+			}
+			return 4;
 		default:
 			return 1;
 		}
