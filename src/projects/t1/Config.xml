@@ -122,10 +122,10 @@
 		<!--  Background map in 2D                                                 -->
 		<!--***********************************************************************-->
 		<!--If set to true, the background of a 2D simulation is colored according to a map, specified in a map-file, specified by the field map-->
-		<useMap value="false" />
+		<useMap value="true" />
 
 		<!--In 2D, the background can be colored depending on a map file. This field contains the file name for this map, which is supposed to be located in the source folder of the current project. The map is only painted if useMap is set to true.-->
-		<map value="images/rpo7.bmp" />
+		<map value="images/rpo8.bmp" />
 
 		<!--***********************************************************************-->
 		<!--  Models                                                               -->
@@ -243,8 +243,9 @@
 		<QUDG rMin="30" rMax="50" ProbabilityType="constant" connectionProbability="0.6"/>
 		
 		<LossyDelivery DropRate="0.025"/>
-		<GeometricNodeCollection rMax="1000"/>
-		<UDG rMax="1000"/>
+		
+		<GeometricNodeCollection rMax="300"/>
+		<UDG rMax="300"/>
 		
 		
 	</Custom>

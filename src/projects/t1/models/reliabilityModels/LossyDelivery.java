@@ -50,6 +50,7 @@ import sinalgo.tools.statistics.Distribution;
  * <p>
  * &lt;LossyDelivery dropRate="..."/&gt;
  */
+
 public class LossyDelivery extends ReliabilityModel {
 	java.util.Random rand = Distribution.getRandom();
 	private static double timeDisablePart = 0;

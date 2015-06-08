@@ -40,7 +40,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 
 import projects.leader.nodes.messages.NetworkMessage;
-import projects.leader.nodes.timers.NetworkMessageTimer;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.messages.Inbox;
@@ -112,11 +111,6 @@ public class SimpleNode extends Node {
 	}
 
 	private void fireLeaderElectionMsg() {
-		NetworkMessageTimer timer = new NetworkMessageTimer(new NetworkMessage(ELECTION));
-		timer.startRelative(1, this);
-		
-		this.timeOfLastMsgSent = Global.currentTime;
-		Tools.appendToOutput("Node " + this.ID + " has just started leader election." + "\n\n");
 	}
 
 
@@ -132,10 +126,6 @@ public class SimpleNode extends Node {
 	}
 	
 	private void sendPingMsgToLeader(){
-		NetworkMessageTimer timer = new NetworkMessageTimer(new NetworkMessage(this.PING));
-		timer.startRelative(1, this);
-		this.timeOfLastMsgSent = Global.currentTime;
-		this.waitingAnswer = true;
 	}
 	
 	public Node getNetworkLeader(){

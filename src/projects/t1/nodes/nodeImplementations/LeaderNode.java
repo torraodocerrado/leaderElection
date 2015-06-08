@@ -26,11 +26,13 @@ import sinalgo.runtime.Global;
 import sinalgo.tools.Tools;
 
 public class LeaderNode extends Node {
+	// const
+	private int coinChancePositive = 100;
+	private double timeOut = 50;
+	private double waitConst = 50;
 
 	// conjunto dos membros do proprio grupo
 	public ArrayList<Node> upSet;
-
-	public static LogFile fileLog;
 	// conjunto dos membros da uniao dos grupos
 	public ArrayList<Node> up;
 	// identificao do grupo (par [CoordID,count])
@@ -56,12 +58,8 @@ public class LeaderNode extends Node {
 	private int waitingAnswerReorganizing = 0;
 	private double timeOutAnswerReorganizing = 0;
 
-	// coin
 	private Random randomGenerator;
-	private int coinChancePositive = 100;
 	private boolean log_on = true;
-	private double timeOut = 50;
-	private double waitConst = 50;
 
 	// report
 	private boolean isFirstStableStep;
@@ -70,6 +68,7 @@ public class LeaderNode extends Node {
 	private static int instableGlobal = 0;
 	private static int instableLocal = 0;
 	private static boolean hasOneInstable = false;
+	public static LogFile fileLog;
 
 	@Override
 	public void handleMessages(Inbox inbox) {
@@ -125,16 +124,6 @@ public class LeaderNode extends Node {
 			this.state = 0;
 			this.waitingAnswerAYCoord = false;
 			this.timeOutAnswerReorganizing = 0;
-			// String logLine = ((int) (Math.round(Global.currentTime))) + ";" +
-			// this.ID + "|" + this.coordenatorCount + ";" + this.up.size() +
-			// ";";
-			// for (Node no : this.up) {
-			// logLine += no.ID + "  ";
-			// }
-			// logLine += ";";
-			// fileLog.add(logLine);
-			// fileLog.ln();
-
 		}
 	}
 
@@ -161,10 +150,6 @@ public class LeaderNode extends Node {
 
 	@Override
 	public void preStep() {
-		if ((this.state > 0)) {
-			instableGlobal++;
-			hasOneInstable = true;
-		}
 		this.checkMembers();
 		this.checkCoord();
 		this.checkTimerToMerge();
@@ -192,23 +177,6 @@ public class LeaderNode extends Node {
 				instableLocal = 0;
 			}
 		}
-		// if (this.IamCoordenator()) {
-		// if ((this.up.size() == (Tools.getNodeList().size() - 1)) &&
-		// (this.state == 0)) {
-		// if (this.isFirstStableStep) {
-		// this.messages += Global.numberOfMessagesInThisRound;
-		// fileLog.addStep(Global.currentTime, ((int)
-		// (Math.round(Global.currentTime))) + ";" + 1 + ";" + this.messages +
-		// ";" + Tools.getNodeList().size() + ";" + this.rounds);
-		// this.isFirstStableStep = false;
-		// fileLog.ln();
-		// }
-		// } else {
-		// // fileLog.addStep(Global.currentTime, ((int)
-		// // (Math.round(Global.currentTime))) + ";" + 0 + ";" +
-		// // this.messages + ";" + Tools.getNodeList().size() + ";");
-		// }
-		// }
 	}
 
 	@Override
@@ -270,20 +238,6 @@ public class LeaderNode extends Node {
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
-
-	private void checkMembers() {
-		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
-			if ((this.IamCoordenator()) && (!this.waitingAnswerAYCoord) && (this.state == 0)) {
-				this.others = new ArrayList<Node>();
-				AYCoord ayCoord = new AYCoord(this);
-				this.broadcast(ayCoord);
-				if (this.outgoingConnections.size() > 0) {
-					this.waitingAnswerAYCoord = true;
-				}
-				this.timeAYCoord = Global.currentTime;
-			}
-		}
-	}
 
 	private void timeOutAYCoord() {
 		if ((this.state == 0) && (this.waitingAnswerAYCoord)) {
@@ -382,6 +336,19 @@ public class LeaderNode extends Node {
 	}
 
 	/*-------------------------------------------------------------------------------------------------*/
+	private void checkMembers() {
+		if ((Global.currentTime % this.waitConst == 0) && this.flipTheCoin()) {
+			if ((this.IamCoordenator()) && (!this.waitingAnswerAYCoord) && (this.state == 0)) {
+				this.others = new ArrayList<Node>();
+				AYCoord ayCoord = new AYCoord(this);
+				this.broadcast(ayCoord);
+				if (this.outgoingConnections.size() > 0) {
+					this.waitingAnswerAYCoord = true;
+				}
+				this.timeAYCoord = Global.currentTime;
+			}
+		}
+	}
 
 	private void checkCoord() {
 		if ((this.rounds % this.waitConst == 0) && this.flipTheCoin()) {
@@ -431,7 +398,6 @@ public class LeaderNode extends Node {
 		this.timeOutAnswerInvitation = 0;
 		this.waitingAnswerInvitation = 0;
 		this.timeMerge = 0;
-
 		this.up = new ArrayList<Node>();
 		this.upSet = new ArrayList<Node>();
 		this.others = new ArrayList<Node>();
