@@ -70,8 +70,8 @@ public class GridDistribution extends DistributionModel{
 		} catch (CorruptConfigurationEntryException e) {
 			e.printStackTrace();
 		}
-		horizontalFactor = (Configuration.dimX - 2*radius)/(radius*2);
-		verticalFactor = (Configuration.dimY - 2*radius)/(radius*2);
+		horizontalFactor = (Configuration.dimX - 2.1*radius)/(radius*2.1);
+		verticalFactor = (Configuration.dimY - 2.1*radius)/(radius*2.1);
 		
 		int ihF = (int)horizontalFactor;
 		int ivF = (int)verticalFactor;
@@ -81,7 +81,7 @@ public class GridDistribution extends DistributionModel{
 		for(int i = 0; i < ihF+1; i++){
 			for(int j = 0; j < ivF+1; j++){
 				if(number < numberOfNodes){
-					positions.add(new Position(radius + i*(radius*2), radius + j*(radius*2), 0));
+					positions.add(new Position(radius + i*(radius*2.1), radius + j*(radius*2.1), 0));
 				}
 			}
 		}

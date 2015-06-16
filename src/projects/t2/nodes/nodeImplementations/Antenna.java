@@ -138,7 +138,7 @@ public class Antenna extends Node {
 		g.setColor(Color.BLACK);
 		this.drawingSizeInPixels = (int) (defaultDrawingSizeInPixels * pt.getZoomFactor());
 		super.drawAsDisk(g, pt, highlight, drawingSizeInPixels);
-		g.setColor(Color.LIGHT_GRAY);
+		g.setColor(Color.black);
 		pt.translateToGUIPosition(this.getPosition());
 		int r = (int) (radius * pt.getZoomFactor());
 		g.drawOval(pt.guiX - r, pt.guiY - r, r*2, r*2);

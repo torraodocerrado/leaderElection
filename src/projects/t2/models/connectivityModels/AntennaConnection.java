@@ -33,42 +33,54 @@
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 package projects.t2.models.connectivityModels;
 
+import java.util.Enumeration;
 
 import projects.t2.nodes.nodeImplementations.Antenna;
 import projects.t2.nodes.nodeImplementations.MobileNode;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
+import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.models.ConnectivityModelHelper;
+import sinalgo.nodes.Connections;
 import sinalgo.nodes.Node;
+import sinalgo.nodes.edges.Edge;
 import sinalgo.runtime.Global;
 import sinalgo.runtime.Main;
+import sinalgo.runtime.Runtime;
 
 /**
  * Implements a connection from a node to the antenna.
  */
 public class AntennaConnection extends ConnectivityModelHelper {
 
-	private static boolean initialized = false; // indicates whether the static fields of this class have already been initialized 
-	private static double rMaxSquare; // we reuse the rMax value from the GeometricNodeCollection.
-	
+	private static boolean initialized = false; // indicates whether the static
+												// fields of this class have
+												// already been initialized
+	private static double rMaxSquare; // we reuse the rMax value from the
+										// GeometricNodeCollection.
+
 	/**
 	 * The constructor reads the antenna-config settings from the config file.
-	 * @throws CorruptConfigurationEntryException When there is a missing entry in the 
-	 * config file.
+	 * 
+	 * @throws CorruptConfigurationEntryException
+	 *             When there is a missing entry in the config file.
 	 */
 	public AntennaConnection() throws CorruptConfigurationEntryException {
-		if(! initialized) { // only initialize once
-			double geomNodeRMax = Configuration.getDoubleParameter("GeometricNodeCollection/rMax");
+		if (!initialized) { // only initialize once
+			double geomNodeRMax = Configuration
+					.getDoubleParameter("GeometricNodeCollection/rMax");
 			try {
 				rMaxSquare = Configuration.getDoubleParameter("UDG/rMax");
-			} catch(CorruptConfigurationEntryException e) {
-				Global.log.logln("\nWARNING: Did not find an entry for UDG/rMax in the XML configuration file. Using GeometricNodeCollection/rMax.\n");
+			} catch (CorruptConfigurationEntryException e) {
+				Global.log
+						.logln("\nWARNING: Did not find an entry for UDG/rMax in the XML configuration file. Using GeometricNodeCollection/rMax.\n");
 				rMaxSquare = geomNodeRMax;
 			}
-			if(rMaxSquare > geomNodeRMax) { // dangerous! This is probably not what the user wants!
+			if (rMaxSquare > geomNodeRMax) { // dangerous! This is probably not
+												// what the user wants!
 				Main.minorError("WARNING: The maximum transmission range used for the UDG connectivity model is larger than the maximum transmission range specified for the GeometricNodeCollection.\nAs a result, not all connections will be found! Either fix the problem in the project-specific configuration file or the '-overwrite' command line argument.");
 			}
 			rMaxSquare = rMaxSquare * rMaxSquare;
@@ -79,11 +91,52 @@ public class AntennaConnection extends ConnectivityModelHelper {
 	protected boolean isConnected(Node from, Node to) {
 		// Antennas are hardwired - we exclude links between pairs of antennas.
 		// MobileNodes are not connected among themselves
-		if(from instanceof Antenna && to instanceof MobileNode ||	to instanceof Antenna && from instanceof MobileNode) {
+		if ((to instanceof Antenna && from instanceof MobileNode)
+				|| (from instanceof Antenna && to instanceof MobileNode)) {
 			double dist = from.getPosition().squareDistanceTo(to.getPosition());
 			return dist < rMaxSquare;
 		}
+
+		if (from instanceof Antenna && to instanceof Antenna) {
+			return true;
+		}
+		if (from instanceof MobileNode && to instanceof MobileNode) {
+			
+			if(
+					(((MobileNode) from).getCurrentAntenna() != null) &&
+					(((MobileNode) to).getCurrentAntenna() != null) &&
+					(((MobileNode) from).getCurrentAntenna().equals(
+					((MobileNode) to).getCurrentAntenna())))
+				return true;
+		}
+
 		return false;
+	}
+
+	@Override
+	public boolean updateConnections(Node n) throws WrongConfigurationException {
+		boolean edgeAdded = false;
+		Enumeration<Node> pNE = Runtime.nodes
+				.getPossibleNeighborsEnumeration(n);
+		if (n instanceof Antenna) {
+			pNE = Runtime.nodes.getNodeEnumeration();
+		}
+		while (pNE.hasMoreElements()) {
+			Node possibleNeighbor = pNE.nextElement();
+			if (n.ID != possibleNeighbor.ID) {
+				if (isConnected(n, possibleNeighbor)) {
+					edgeAdded = !n.outgoingConnections.add(n, possibleNeighbor,
+							true) || edgeAdded; // note: don't write it the
+												// other way round, otherwise,
+												// the edge is not added if
+												// edgeAdded is true.
+				}
+			}
+		}
+		boolean dyingLinks = n.outgoingConnections.removeInvalidLinks();
+
+		return edgeAdded || dyingLinks; // return whether an edge has been added
+										// or removed.
 	}
 
 }
