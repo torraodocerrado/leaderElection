@@ -277,12 +277,12 @@
 
 	</Framework>
 	<Custom>
-		<GeometricNodeCollection rMax="150" />
-		<UDG rMax="150" />
+		<GeometricNodeCollection rMax="166" />
+		<UDG rMax="166" />
 
 		<Node defaultSize="10" />
 
-		<MessageTransmission ConstantTime="1" />
+		<MessageTransmission ConstantTime="1" timeOut="500"/>
 
 		<Antenna>
 			<InviteIntervall distribution="Uniform" min="6" max="12" /><!-- 
@@ -291,7 +291,7 @@
 			<Size value="15" /> <!-- Size of antenna -->
 		</Antenna>
 
-		<Edge passiveColor="0x8888cc" activeColor="0xdd7700" />
+		<Edge passiveColor="0xcccccc" activeColor="0xdd7700" />
 
 		<MobileNode Size="4" />
 

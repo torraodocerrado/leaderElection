@@ -45,14 +45,7 @@ import sinalgo.models.DistributionModel;
 import sinalgo.nodes.Position;
 import sinalgo.tools.statistics.Distribution;
 
-/**
- * A distribution model that distributes the nodes on a regular grid depending on the geometric node 
- * collections rMax. It choses the postitions so that the field is optimally covered by the nodes.
- * This means that the grid distances are sqrt(2)*rMax. This completely covers the area between the
- * nodes as there is no point between the four nodes having a distance to all the nodes that is bigger
- * than rMax. If there are nodes left after having a node on every grid position the model distributes
- * the other nodes randomly on the field.
- */
+
 public class GridDistribution extends DistributionModel{
 
 	private java.util.Random rand = Distribution.getRandom();
@@ -86,6 +79,7 @@ public class GridDistribution extends DistributionModel{
 			}
 		}
 	}
+	
 	
 	@Override
 	public Position getNextPosition() {

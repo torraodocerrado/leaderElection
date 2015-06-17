@@ -37,13 +37,7 @@
 package projects.t2;
 
 
-import java.awt.Color;
-
-import projects.t2.nodes.nodeImplementations.MobileNode;
-import projects.t2.nodes.timers.SmsTimer;
-import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
-import sinalgo.tools.Tools;
 
 /**
  * This class holds customized global state and methods for the framework. 
@@ -67,58 +61,11 @@ import sinalgo.tools.Tools;
  * added to the GUI. 
  */
 public class CustomGlobal extends AbstractCustomGlobal{
-	
-	/* (non-Javadoc)
-	 * @see runtime.AbstractCustomGlobal#hasTerminated()
-	 */
+
+	@Override
 	public boolean hasTerminated() {
 		return false;
 	}
-
-	/**
-	 * An example of a method that will be available through the menu of the GUI.
-	 */
-	@AbstractCustomGlobal.GlobalMethod(menuText="Reset Color")
-	public void resetColor() {
-		for(Node n : Tools.getNodeList()){
-			n.setColor(Color.black);
-		}
-	}
-
-
-	private boolean automaticSMS = false;
-
-	@AbstractCustomGlobal.GlobalMethod(menuText="Toggle Automatic SMS")
-	public void toggleAutomaticSMS() {
-		automaticSMS = !automaticSMS;
-	}
 	
-	/* (non-Javadoc)
-	 * @see sinalgo.runtime.AbstractCustomGlobal#postRound()
-	 */
-	public void postRound() {
-		if(automaticSMS) {
-			Node sender = getRandomMobileNode();
-			Node receiver = getRandomMobileNode();
-			SmsTimer t = new SmsTimer("Automatic SMS", receiver);
-			t.startRelative(1, sender);
-			sender.setColor(Color.RED);
-			receiver.setColor(Color.BLUE);
-		}
-	}
-	
-	private MobileNode getRandomMobileNode() {
-		Node n = Tools.getNodeList().getRandomNode();
-		while(!(n instanceof MobileNode)) {
-			n = Tools.getNodeList().getRandomNode();
-		}
-		return (MobileNode) n;
-	}
-	
-	/* (non-Javadoc)
-	 * @see runtime.AbstractCustomGlobal#preRun()
-	 */
-	public void preRun() {
-		// A method called at startup, before the first round is executed.
-	}
+
 }
