@@ -68,27 +68,24 @@ public class MobileNode extends NodeT2 {
 	}
 
 	public void checkAntenna() {
+		Antenna  ant = this.getNewAntenna();
+		if (this.currentAntenna !=null && ant == null) {
+			this.reset();
+		} else if(this.currentAntenna==null){
+			this.currentAntenna = ant;
+		} else if(this.currentAntenna.ID != ant.ID){
+			this.reset();
+		}
+	}
+	
+	public Antenna getNewAntenna(){
 		Connections no = this.outgoingConnections;
-		boolean has = false;
-		if (no.size() == 0) {
-			this.currentAntenna = null;
-		} else {
-			for (Edge edge : no) {
-				if (edge.endNode instanceof Antenna) {
-					if ((this.currentAntenna != null) && (this.currentAntenna.ID != edge.endNode.ID)) {
-						this.reset();
-						this.checkAntenna();
-					} else {
-						this.currentAntenna = (Antenna) edge.endNode;
-						has = true;
-					}
-					break;
-				}
-			}
-			if (!has) {
-				this.reset();
+		for (Edge edge : no) {
+			if (edge.endNode instanceof Antenna) {
+					return (Antenna) edge.endNode;
 			}
 		}
+		return null;
 	}
 
 	@Override
@@ -103,7 +100,7 @@ public class MobileNode extends NodeT2 {
 		if (IamAlone()) {
 			this.setColor(Color.RED);
 		} else {
-			if (Omega().ID == this.ID) {
+			if (IamCoord()) {
 				this.setColor(Color.GREEN);
 			} else {
 				this.setColor(Color.BLUE);
@@ -115,6 +112,13 @@ public class MobileNode extends NodeT2 {
 		return this.currentAntenna == null;
 	}
 
+	private boolean IamCoord() {
+		if(this.coordenatorGroup != null)
+			return this.coordenatorGroup.ID == this.ID;
+		else 
+			return false;
+	}
+
 	private void no_readPrepare(Prepare message) {
 		if ((this.getState() == 0) && (Omega().ID == message.sender.ID)) {
 			ACK_Prepare ack = new ACK_Prepare(this);
@@ -124,7 +128,10 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_readPropose(Propose message) {
-		if ((this.getState() == 0) && (Omega().ID == message.coord.ID)) {
+		if ((Omega().ID == message.coord.ID)) {
+			if(this.getState() != 0){
+				this.reset();
+			}
 			Connections no = this.outgoingConnections;
 			for (Edge edge : no) {
 				if (edge.endNode instanceof MobileNode) {
@@ -170,6 +177,7 @@ public class MobileNode extends NodeT2 {
 		if ((this.getState() == 2) && (Omega().ID == message.sender.ID)) {
 			ACK_Accept ack = new ACK_Accept(this);
 			this.send(ack, message.sender);
+			this.coordenatorGroup = message.sender;
 			this.setState(0);
 		}
 	}
@@ -186,6 +194,7 @@ public class MobileNode extends NodeT2 {
 			this.setState(0);
 			this.count_accept = 0;
 			this.count_prepare = 0;
+			this.coordenatorGroup = this;
 			Decided decided = new Decided(this);
 			this.send(decided, this.currentAntenna);
 		} else {

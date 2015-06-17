@@ -107,8 +107,8 @@ public abstract class NodeT2 extends Node {
 
 	protected void checkTimeOut() {
 		if (this.currentTimeOut == Global.currentTime) {
-			this.reset();
 			log("TIME-OUT in state " + this.state);
+			this.reset();
 		}
 	}
 

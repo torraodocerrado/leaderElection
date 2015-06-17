@@ -9,6 +9,8 @@ import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
+import sinalgo.nodes.Connections;
+import sinalgo.nodes.edges.Edge;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
 import sinalgo.tools.Tools;
@@ -33,7 +35,8 @@ public class Antenna extends NodeT2 {
 	private void readDecided(Decided message) {
 		if ((this.getState() == 2) && (Omega().ID == message.sender.ID)) {
 			this.setState(0);
-			log("Consenso realizado na antena "+this.ID);
+			this.coordenatorGroup = message.sender;
+			log("Consenso realizado na antena " + this.ID);
 		}
 	}
 
@@ -47,10 +50,19 @@ public class Antenna extends NodeT2 {
 
 	@Override
 	public void preStep() {
+		this.checkCoord();
 		if (this.getState() == 0) {
 			propose();
 		}
 		this.checkTimeOut();
+	}
+
+	private void checkCoord() {
+		if (this.coordenatorGroup != null
+				&& !this.outgoingConnections.contains(this,
+						this.coordenatorGroup)) {
+			this.reset();
+		}
 	}
 
 	private void propose() {

@@ -114,11 +114,8 @@ public class AntennaConnection extends ConnectivityModelHelper {
 	@Override
 	public boolean updateConnections(Node n) throws WrongConfigurationException {
 		boolean edgeAdded = false;
-		Enumeration<Node> pNE = Runtime.nodes
-				.getPossibleNeighborsEnumeration(n);
-		if (n instanceof Antenna) {
-			pNE = Runtime.nodes.getNodeEnumeration();
-		}
+		Enumeration<Node> pNE = Runtime.nodes.getNodeEnumeration();
+		
 		while (pNE.hasMoreElements()) {
 			Node possibleNeighbor = pNE.nextElement();
 			if (n.ID != possibleNeighbor.ID) {

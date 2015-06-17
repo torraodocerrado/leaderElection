@@ -282,7 +282,7 @@
 
 		<Node defaultSize="10" />
 
-		<MessageTransmission ConstantTime="1" timeOut="500"/>
+		<MessageTransmission ConstantTime="1" timeOut="100"/>
 
 		<Antenna>
 			<InviteIntervall distribution="Uniform" min="6" max="12" /><!-- 
