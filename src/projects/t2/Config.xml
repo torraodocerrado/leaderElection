@@ -166,13 +166,13 @@
 		<!--*********************************************************************** -->
 		<!--If set to true, the background of a 2D simulation is colored according 
 			to a map, specified in a map-file, specified by the field map -->
-		<useMap value="false" />
+		<useMap value="true" />
 
 		<!--In 2D, the background can be colored depending on a map file. This 
 			field contains the file name for this map, which is supposed to be located 
 			in the source folder of the current project. The map is only painted if useMap 
 			is set to true. -->
-		<map value="" />
+		<map value="images/rpo8.bmp" />
 
 		<!--*********************************************************************** -->
 		<!-- Models -->
@@ -282,7 +282,7 @@
 
 		<Node defaultSize="10" />
 
-		<MessageTransmission ConstantTime="1" timeOut="100"/>
+		<MessageTransmission ConstantTime="1" timeOut="200"/>
 
 		<Antenna>
 			<InviteIntervall distribution="Uniform" min="6" max="12" /><!-- 
@@ -291,7 +291,7 @@
 			<Size value="15" /> <!-- Size of antenna -->
 		</Antenna>
 
-		<Edge passiveColor="0xcccccc" activeColor="0xdd7700" />
+		<Edge passiveColor="0xffc0cb" activeColor="0xdd7700" />
 
 		<MobileNode Size="4" />
 

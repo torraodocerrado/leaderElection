@@ -3,12 +3,9 @@ package projects.t2.models.mobilityModels;
 import projects.defaultProject.models.mobilityModels.RandomWayPoint;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
-import sinalgo.io.mapIO.Map;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.Position;
 import sinalgo.runtime.Global;
-import sinalgo.runtime.Main;
-import sinalgo.tools.Tools;
 
 public class MoveAndWait extends RandomWayPoint {
 	private static boolean pause = false;
@@ -40,28 +37,7 @@ public class MoveAndWait extends RandomWayPoint {
 			}
 		}
 		if (!MoveAndWait.isPause()) {
-			Map map = Tools.getBackgroundMap();
-			Position newPos = new Position();
-			boolean inLake = false;
-			if (Configuration.useMap) {
-				inLake = !map.isWhite(n.getPosition()); // we are already
-			}
-			if (inLake) {
-				Main.fatalError("A node is standing in a lake. Cannot find a step outside.");
-			}
-
-			do {
-				inLake = false;
-				newPos = super.getNextPos(n);
-				if (Configuration.useMap) {
-					if (!map.isWhite(newPos)) {
-						inLake = true;
-						super.remaining_hops = 0;// this foces the node to
-													// search for an other
-													// target...
-					}
-				}
-			} while (inLake);
+			Position newPos = super.getNextPos(n);
 			return newPos;
 		} else {
 			return n.getPosition();

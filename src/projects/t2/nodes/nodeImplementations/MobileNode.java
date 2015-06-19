@@ -51,7 +51,7 @@ public class MobileNode extends NodeT2 {
 				this.no_readAccept((Accept) message);
 			}
 			if (message instanceof ACK_Accept) {
-				logMsg("Accept by " + ((ACK_Accept) message).sender.ID);
+				logMsg("ACK_Accept by " + ((ACK_Accept) message).sender.ID);
 				this.co_readACK_Accept((ACK_Accept) message);
 			}
 		}
@@ -63,26 +63,36 @@ public class MobileNode extends NodeT2 {
 
 	@Override
 	public void preStep() {
+		this.checkPropose();
 		this.checkAntenna();
 		this.checkTimeOut();
 	}
 
-	public void checkAntenna() {
-		Antenna  ant = this.getNewAntenna();
-		if (this.currentAntenna !=null && ant == null) {
-			this.reset();
-		} else if(this.currentAntenna==null){
-			this.currentAntenna = ant;
-		} else if(this.currentAntenna.ID != ant.ID){
-			this.reset();
+	private void checkPropose() {
+		if(!this.useAntenna && this.getState()==0 && Omega().ID==this.ID){
+			Propose propose = new Propose(this, this);
+			co_readPropose(propose);
 		}
 	}
-	
-	public Antenna getNewAntenna(){
+
+	public void checkAntenna() {
+		if(this.useAntenna){
+			Antenna ant = this.getNewAntenna();
+			if (this.currentAntenna != null && ant == null) {
+				this.reset();
+			} else if (this.currentAntenna == null) {
+				this.currentAntenna = ant;
+			} else if (this.currentAntenna.ID != ant.ID) {
+				this.reset();
+			}
+		}
+	}
+
+	public Antenna getNewAntenna() {
 		Connections no = this.outgoingConnections;
 		for (Edge edge : no) {
 			if (edge.endNode instanceof Antenna) {
-					return (Antenna) edge.endNode;
+				return (Antenna) edge.endNode;
 			}
 		}
 		return null;
@@ -98,7 +108,7 @@ public class MobileNode extends NodeT2 {
 		this.drawNodeAsDiskWithText(g, pt, highlight, String.valueOf(this.ID),
 				20, Color.BLACK);
 		if (IamAlone()) {
-			this.setColor(Color.RED);
+			this.setColor(Color.GRAY);
 		} else {
 			if (IamCoord()) {
 				this.setColor(Color.GREEN);
@@ -109,13 +119,13 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private boolean IamAlone() {
-		return this.currentAntenna == null;
+		return this.currentAntenna == null && this.useAntenna == true;
 	}
 
 	private boolean IamCoord() {
-		if(this.coordenatorGroup != null)
+		if (this.coordenatorGroup != null)
 			return this.coordenatorGroup.ID == this.ID;
-		else 
+		else
 			return false;
 	}
 
@@ -129,7 +139,7 @@ public class MobileNode extends NodeT2 {
 
 	private void co_readPropose(Propose message) {
 		if ((Omega().ID == message.coord.ID)) {
-			if(this.getState() != 0){
+			if (this.getState() != 0) {
 				this.reset();
 			}
 			Connections no = this.outgoingConnections;
@@ -190,16 +200,25 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_sendDecided() {
-		if (this.currentAntenna != null) {
+		if (this.useAntenna) {
+			if (this.currentAntenna != null) {
+				this.setState(0);
+				this.count_accept = 0;
+				this.count_prepare = 0;
+				this.coordenatorGroup = this;
+				Decided decided = new Decided(this);
+				this.send(decided, this.currentAntenna);
+			} else {
+				this.reset();
+			}
+		} else {
 			this.setState(0);
 			this.count_accept = 0;
 			this.count_prepare = 0;
 			this.coordenatorGroup = this;
-			Decided decided = new Decided(this);
-			this.send(decided, this.currentAntenna);
-		} else {
-			this.reset();
+			log("Consenso realizado na antena " + this.ID);
 		}
+		
 	}
 
 }

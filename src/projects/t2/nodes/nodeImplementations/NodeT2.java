@@ -12,9 +12,10 @@ public abstract class NodeT2 extends Node {
 	private boolean logmsg_on = false;
 	public Node coordenatorGroup;
 	protected double currentTimeOut = 0;
-	protected int timeOut = 500;
+	protected int timeOut;
 	/* state of node 0 = Normal 1 = Prepare 2 = Accept */
 	private int state;
+	protected boolean useAntenna;
 
 	public int getState() {
 		return state;
@@ -34,6 +35,7 @@ public abstract class NodeT2 extends Node {
 		try {
 			this.timeOut = Configuration
 					.getIntegerParameter("MessageTransmission/timeOut");
+			this.useAntenna = !Configuration.useMap;
 		} catch (CorruptConfigurationEntryException e) {
 			e.printStackTrace();
 		}

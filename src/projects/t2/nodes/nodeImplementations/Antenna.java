@@ -9,8 +9,6 @@ import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
-import sinalgo.nodes.Connections;
-import sinalgo.nodes.edges.Edge;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
 import sinalgo.tools.Tools;
@@ -41,27 +39,13 @@ public class Antenna extends NodeT2 {
 	}
 
 	@Override
-	public void init() {
-	}
-
-	@Override
 	public void neighborhoodChange() {
 	}
 
 	@Override
 	public void preStep() {
-		this.checkCoord();
 		if (this.getState() == 0) {
 			propose();
-		}
-		this.checkTimeOut();
-	}
-
-	private void checkCoord() {
-		if (this.coordenatorGroup != null
-				&& !this.outgoingConnections.contains(this,
-						this.coordenatorGroup)) {
-			this.reset();
 		}
 	}
 
@@ -76,6 +60,7 @@ public class Antenna extends NodeT2 {
 
 	@Override
 	public void postStep() {
+		this.checkTimeOut();
 	}
 
 	private static int radius;
@@ -94,7 +79,7 @@ public class Antenna extends NodeT2 {
 		this.drawingSizeInPixels = (int) (defaultDrawingSizeInPixels * pt
 				.getZoomFactor());
 		super.drawAsDisk(g, pt, highlight, drawingSizeInPixels);
-		g.setColor(Color.black);
+		g.setColor(Color.GRAY);
 		pt.translateToGUIPosition(this.getPosition());
 		int r = (int) (radius * pt.getZoomFactor());
 		g.drawOval(pt.guiX - r, pt.guiY - r, r * 2, r * 2);
