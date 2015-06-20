@@ -1,16 +1,16 @@
 package projects.t2.nodes.nodeImplementations;
 
-import sinalgo.nodes.Connections;
-import sinalgo.nodes.Node;
-import sinalgo.nodes.edges.Edge;
-import sinalgo.runtime.Global;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
+import sinalgo.nodes.Node;
+import sinalgo.runtime.Global;
+import sinalgo.runtime.nodeCollection.NodeCollectionInterface;
+import sinalgo.tools.Tools;
 
 public abstract class NodeT2 extends Node {
 	private boolean log_on = true;
-	private boolean logmsg_on = false;
-	public Node coordenatorGroup;
+	private boolean logmsg_on = true;
+	public MobileNode coordenatorGroup;
 	protected double currentTimeOut = 0;
 	protected int timeOut;
 	/* state of node 0 = Normal 1 = Prepare 2 = Accept */
@@ -29,6 +29,16 @@ public abstract class NodeT2 extends Node {
 			this.currentTimeOut = Global.currentTime + this.timeOut;
 		}
 	}
+	
+	public int getTotalNodes(){
+		int i = 0;
+		for (Node no : Tools.getNodeList()) {
+			if(no instanceof MobileNode){
+				i++;
+			}
+		}
+		return i;
+	}
 
 	@Override
 	public void init() {
@@ -42,15 +52,17 @@ public abstract class NodeT2 extends Node {
 	}
 
 	public MobileNode Omega() {
-		Connections nos = this.outgoingConnections;
+		NodeCollectionInterface nos = Tools.getNodeList();
 		MobileNode result = null;
 		if (this instanceof MobileNode) {
 			result = (MobileNode) this;
 		}
-		for (Edge edge : nos) {
-			if (((result == null) && (edge.endNode instanceof MobileNode))
-					|| ((edge.endNode instanceof MobileNode) && (result.ID < edge.endNode.ID))) {
-				result = (MobileNode) edge.endNode;
+		for (Node edge : nos) {
+			if (((result == null) && (edge instanceof MobileNode))
+					|| ((edge instanceof MobileNode) && (result.ID < edge.ID))) {
+				if (((MobileNode) edge).currentAntenna != null) {
+					result = (MobileNode) edge;
+				}
 			}
 		}
 		return result;
@@ -77,6 +89,7 @@ public abstract class NodeT2 extends Node {
 			}
 		}
 	}
+
 	protected void logMsg(Object message) {
 		if (this.logmsg_on) {
 			if (this instanceof Antenna) {
@@ -101,8 +114,7 @@ public abstract class NodeT2 extends Node {
 
 	private boolean IamCoordenator() {
 		if (this.coordenatorGroup == null) {
-			this.coordenatorGroup = this;
-			return true;
+			return false;
 		}
 		return this.ID == this.coordenatorGroup.ID;
 	}

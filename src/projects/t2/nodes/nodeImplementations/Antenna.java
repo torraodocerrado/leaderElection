@@ -2,8 +2,13 @@ package projects.t2.nodes.nodeImplementations;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
-import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
+import javax.imageio.ImageIO;
 
 import projects.t2.nodes.messages.Decided;
 import projects.t2.nodes.messages.Propose;
@@ -16,9 +21,11 @@ import sinalgo.nodes.Connections;
 import sinalgo.nodes.edges.Edge;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
+import sinalgo.runtime.Global;
 import sinalgo.tools.Tools;
 
 public class Antenna extends NodeT2 {
+	BufferedImage img = null;
 
 	@Override
 	public void checkRequirements() throws WrongConfigurationException {
@@ -31,35 +38,59 @@ public class Antenna extends NodeT2 {
 			if (message instanceof Decided) {
 				logMsg("Decided by " + ((Decided) message).sender.ID);
 				this.readDecided((Decided) message);
-			} else {
-				this.flooding(message);
 			}
+			this.flooding(message);
+		}
+	}
+
+	@Override
+	public void init() {
+		super.init();
+		try {
+			InputStream in = null;
+			in = new FileInputStream("src/" + Configuration.userProjectDir
+					+ "/" + Global.projectName + "/" + "images/templo.bmp");
+			if ((img = ImageIO.read(in)) == null) {
+				throw new FileNotFoundException(
+						"\n 'map.bmp' - This image format is not supported.");
+			}
+			in.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
 	private void flooding(Message message) {
-		Connections nos = this.outgoingConnections;
-		if(((T2Message) message).sender instanceof MobileNode){
-			for (Edge edge : nos) {
-				if(edge.endNode instanceof Antenna){
-					this.send(message, edge.endNode);
-				}				
-			}
+		if (((T2Message) message).sender instanceof MobileNode) {
+			this.sendAllConected(message);
 		} else {
-			for (Edge edge : nos) {
-				if(edge.endNode instanceof MobileNode){
-					this.send(message, edge.endNode);
-				}
+			this.sendAllMobileNodeConected(message);
+		}
+	}
+
+	private void sendAllMobileNodeConected(Message message) {
+		Connections nodes = this.outgoingConnections;
+		((T2Message) message).sender = this;
+		for (Edge edge : nodes) {
+			if (edge.endNode instanceof MobileNode) {
+				this.send(message, edge.endNode);
 			}
 		}
-		
+	}
+
+	private void sendAllConected(Message message) {
+		((T2Message) message).sender = this;
+		this.broadcast(message);
 	}
 
 	private void readDecided(Decided message) {
-		if ((this.getState() == 2) && (Omega().ID == message.sender.ID)) {
+		if ((this.getState() == 2) && (Omega().ID == message.coord.ID)) {
 			this.setState(0);
-			this.coordenatorGroup = message.sender;
-			log("Consenso realizado na antena " + this.ID);
+			this.coordenatorGroup = message.coord;
+			log("Consenso realizado na antena " + this.ID + " coord "
+					+ this.coordenatorGroup.ID);
 		}
 	}
 
@@ -77,9 +108,11 @@ public class Antenna extends NodeT2 {
 	private void propose() {
 		MobileNode leader = Omega();
 		if (leader != null) {
-			Propose propose = new Propose(this, leader);
-			this.send(propose, leader);
-			this.setState(2);
+			if (this.outgoingConnections.contains(this, leader)) {
+				Propose propose = new Propose(this, leader);
+				this.send(propose, leader);
+				this.setState(2);
+			}
 		}
 	}
 
@@ -110,9 +143,36 @@ public class Antenna extends NodeT2 {
 		g.drawOval(pt.guiX - r, pt.guiY - r, r * 2, r * 2);
 		g.setColor(bckup);
 
-		this.drawNodeAsDiskWithText(g, pt, highlight, String.valueOf(this.ID),
-				20, Color.BLACK);
-		this.setColor(Color.yellow);
+		int imgWidth = 0;
+		int imgHeight = 0;
+		int[][] grid = null;
+		imgWidth = img.getWidth();
+		imgHeight = img.getHeight();
+		grid = new int[imgWidth][imgHeight];
+		// copy the image data
+		for (int i = 0; i < imgWidth; i++) {
+			for (int j = 0; j < imgHeight; j++) {
+				grid[i][j] = img.getRGB(i, j);
+			}
+		}
+
+		int iniX = (int) this.getPosition().xCoord - (imgWidth / 2);
+		int iniY = (int) this.getPosition().yCoord - (imgHeight / 2);
+
+		for (int i = iniX; i < imgWidth + iniX; i++) {
+			for (int j = iniY; j < imgHeight + iniY; j++) {
+				pt.translateToGUIPosition(i, j, 0); // top left corner of cell
+				int topLeftX = pt.guiX, topLeftY = pt.guiY;
+				pt.translateToGUIPosition((i + 1), (j + 1), 0); // bottom right
+																// corner of
+																// cell
+				Color col = new Color(grid[i - iniX][j - iniY]);
+				g.setColor(col);
+				g.fillRect(topLeftX, topLeftY, pt.guiX - topLeftX, pt.guiY
+						- topLeftY);
+			}
+		}
+
 	}
 
 	public Antenna() {

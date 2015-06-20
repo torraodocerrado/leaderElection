@@ -50,15 +50,6 @@ public class AntennaConnection extends ConnectivityModelHelper {
 		if (from instanceof Antenna && to instanceof Antenna) {
 			return true;
 		}
-		if (from instanceof MobileNode && to instanceof MobileNode) {
-			
-			if(
-					(((MobileNode) from).getCurrentAntenna() != null) &&
-					(((MobileNode) to).getCurrentAntenna() != null) &&
-					(((MobileNode) from).getCurrentAntenna().equals(
-					((MobileNode) to).getCurrentAntenna())))
-				return true;
-		}
 
 		return false;
 	}
