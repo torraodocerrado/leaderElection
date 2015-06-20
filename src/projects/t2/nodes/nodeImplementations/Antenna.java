@@ -3,12 +3,17 @@ package projects.t2.nodes.nodeImplementations;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
+
 import projects.t2.nodes.messages.Decided;
 import projects.t2.nodes.messages.Propose;
+import projects.t2.nodes.messages.T2Message;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
+import sinalgo.nodes.Connections;
+import sinalgo.nodes.edges.Edge;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
 import sinalgo.tools.Tools;
@@ -26,8 +31,28 @@ public class Antenna extends NodeT2 {
 			if (message instanceof Decided) {
 				logMsg("Decided by " + ((Decided) message).sender.ID);
 				this.readDecided((Decided) message);
+			} else {
+				this.flooding(message);
 			}
 		}
+	}
+
+	private void flooding(Message message) {
+		Connections nos = this.outgoingConnections;
+		if(((T2Message) message).sender instanceof MobileNode){
+			for (Edge edge : nos) {
+				if(edge.endNode instanceof Antenna){
+					this.send(message, edge.endNode);
+				}				
+			}
+		} else {
+			for (Edge edge : nos) {
+				if(edge.endNode instanceof MobileNode){
+					this.send(message, edge.endNode);
+				}
+			}
+		}
+		
 	}
 
 	private void readDecided(Decided message) {
