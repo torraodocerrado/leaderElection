@@ -6,8 +6,8 @@ import sinalgo.nodes.Node;
 public class Accept extends T2Message {
 	public NodeT2 coord;
 
-	public Accept(int round, Node sender, NodeT2 coord) {
-		super(round, sender);
+	public Accept(Node sender, NodeT2 coord) {
+		super(sender);
 		this.coord = coord;
 	}
 }

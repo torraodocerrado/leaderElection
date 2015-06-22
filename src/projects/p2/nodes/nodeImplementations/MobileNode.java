@@ -1,4 +1,4 @@
-package projects.t2.nodes.nodeImplementations;
+package projects.p2.nodes.nodeImplementations;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -10,12 +10,13 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
-import projects.t2.nodes.messages.ACK_Accept;
-import projects.t2.nodes.messages.ACK_Prepare;
-import projects.t2.nodes.messages.Accept;
-import projects.t2.nodes.messages.Decided;
-import projects.t2.nodes.messages.Prepare;
-import projects.t2.nodes.messages.Propose;
+import projects.p2.nodes.messages.ACK_Accept;
+import projects.p2.nodes.messages.ACK_Prepare;
+import projects.p2.nodes.messages.Accept;
+import projects.p2.nodes.messages.Decided;
+import projects.p2.nodes.messages.NACK;
+import projects.p2.nodes.messages.Prepare;
+import projects.p2.nodes.messages.Propose;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
@@ -46,6 +47,9 @@ public class MobileNode extends NodeT2 {
 	public void handleMessages(Inbox inbox) {
 		while (inbox.hasNext()) {
 			Message message = inbox.next();
+			if (message instanceof NACK) {
+				this._readNACK((NACK) message);
+			}
 			if (message instanceof Propose) {
 				logMsg("Propose by " + ((Propose) message).sender.ID);
 				this.co_readPropose((Propose) message);
@@ -67,6 +71,15 @@ public class MobileNode extends NodeT2 {
 				this.co_readACK_Accept((ACK_Accept) message);
 			}
 		}
+	}
+
+	private void _readNACK(NACK message) {
+		if (message.round == this.getRound()) {
+			if (message.to.ID == this.ID) {
+				this.reset();
+			}
+		}
+
 	}
 
 	@Override
@@ -190,41 +203,55 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_readPropose(Propose message) {
-		if (this.ID == message.coord.ID && this.ID == Omega().ID) {
+		if (this.ID == message.coord.ID && (this.getRound() == message.round)
+				&& this.ID == Omega().ID) {
 			if (this.getState() != 0) {
 				this.reset();
 			}
 			this.count_prepare = 0;
-			Prepare prepare = new Prepare(this, this);
+			Prepare prepare = new Prepare(message.round, this, this);
 			this.send(prepare, message.sender);
 			this.setState(1);
+		} else {
+
 		}
 	}
 
 	private void no_readPrepare(Prepare message) {
-		if ((message.coord.ID != this.ID) && (this.getState() == 0)
-				&& (Omega().ID == message.coord.ID)) {
-			ACK_Prepare ack = new ACK_Prepare(this, message.coord, this);
-			while (this.currentAntenna == null) {
-				this.checkAntenna();
+		if ((message.round > this.lastRound) &&(message.coord.ID != this.ID) && (this.getState() == 0)
+					&& (Omega().ID == message.coord.ID)) {
+				this.lastRound = message.round;
+				ACK_Prepare ack = new ACK_Prepare(message.round, this,
+						message.coord, this);
+				while (this.currentAntenna == null) {
+					this.checkAntenna();
+				}
+				this.send(ack, this.currentAntenna);
+				this.setState(2);
 			}
-			this.send(ack, this.currentAntenna);
-			this.setState(2);
+		 else {
+			 NACK nack = new NACK(this.lastRound, this, message.coord);
+				while (this.currentAntenna == null) {
+					this.checkAntenna();
+				}
+			this.send(nack, this.currentAntenna);
 		}
 	}
 
 	private void co_readACK_Prepare(ACK_Prepare message) {
-		if (this.getState() == 1 && message.coord.ID == this.ID) {
+		if ((this.getRound() == message.round) && this.getState() == 1
+				&& message.coord.ID == this.ID) {
 			this.count_prepare++;
 			if (this.count_prepare > ((this.getTotalNodes()) / 2) - 1) {
-				this.co_startAccept();
+				this.co_startAccept(message.round);
 			}
 		}
 	}
 
-	private void co_startAccept() {
-		if ((this.getState() == 1) && (Omega().ID == this.ID)) {
-			Accept ack = new Accept(this, this);
+	private void co_startAccept(int round) {
+		if ((this.getRound() == round) && (this.getState() == 1)
+				&& (Omega().ID == this.ID)) {
+			Accept ack = new Accept(round, this, this);
 			this.send(ack, this.currentAntenna);
 			this.count_accept = 0;
 			this.setState(2);
@@ -233,8 +260,10 @@ public class MobileNode extends NodeT2 {
 
 	private void no_readAccept(Accept message) {
 		if ((message.coord.ID != this.ID) && (this.getState() == 2)
+				&& (this.getRound() == message.round)
 				&& (Omega().ID == message.coord.ID)) {
-			ACK_Accept ack = new ACK_Accept(this, message.coord, this);
+			ACK_Accept ack = new ACK_Accept(message.round, this, message.coord,
+					this);
 			this.send(ack, this.currentAntenna);
 			this.coordenatorGroup = message.coord;
 			this.setState(0);
@@ -242,7 +271,8 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_readACK_Accept(ACK_Accept message) {
-		if (this.getState() == 2 && message.coord.ID == this.ID) {
+		if (this.getState() == 2 && (this.getRound() == message.round)
+				&& message.coord.ID == this.ID) {
 			this.count_accept++;
 			if (this.count_accept > ((this.getTotalNodes() / 2) - 1)) {
 				this.co_sendDecided();
@@ -256,7 +286,7 @@ public class MobileNode extends NodeT2 {
 			this.count_accept = 0;
 			this.count_prepare = 0;
 			this.coordenatorGroup = this;
-			Decided decided = new Decided(this, this);
+			Decided decided = new Decided(round, this, this);
 			this.send(decided, this.currentAntenna);
 		} else {
 			this.reset();

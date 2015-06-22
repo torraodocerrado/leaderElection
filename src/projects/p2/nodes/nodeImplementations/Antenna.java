@@ -1,4 +1,4 @@
-package projects.t2.nodes.nodeImplementations;
+package projects.p2.nodes.nodeImplementations;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -10,9 +10,9 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
-import projects.t2.nodes.messages.Decided;
-import projects.t2.nodes.messages.Propose;
-import projects.t2.nodes.messages.T2Message;
+import projects.p2.nodes.messages.Decided;
+import projects.p2.nodes.messages.Propose;
+import projects.p2.nodes.messages.T2Message;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.configuration.WrongConfigurationException;
@@ -100,7 +100,7 @@ public class Antenna extends NodeT2 {
 		MobileNode leader = (MobileNode) Omega();
 		if (leader != null) {
 			if (this.outgoingConnections.contains(this, leader)) {
-				Propose propose = new Propose(this, leader);
+				Propose propose = new Propose(this.nextRound(), this, leader);
 				this.send(propose, leader);
 				this.setState(2);
 			}

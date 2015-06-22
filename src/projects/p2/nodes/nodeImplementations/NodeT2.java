@@ -1,10 +1,10 @@
-package projects.t2.nodes.nodeImplementations;
+package projects.p2.nodes.nodeImplementations;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import projects.t1.LogFile;
-import projects.t2.nodes.messages.Decided;
+import projects.p2.LogFile;
+import projects.p2.nodes.messages.Decided;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.nodes.Node;
@@ -13,13 +13,15 @@ import sinalgo.runtime.nodeCollection.NodeCollectionInterface;
 import sinalgo.tools.Tools;
 
 public abstract class NodeT2 extends Node {
-	private boolean log_on = false;
+	private boolean log_on = true;
 	private boolean logmsg_on = false;
 	public NodeT2 coordenatorGroup;
 	protected double currentTimeOut = 0;
 	protected int timeOut;
 	/* state of node 0 = Normal 1 = Prepare 2 = Accept */
 	private int state;
+	public static int round = 0;
+	public int lastRound = 0;
 
 	protected boolean useAntenna;
 	public static LogFile fileLog;
@@ -28,6 +30,14 @@ public abstract class NodeT2 extends Node {
 
 	public int getState() {
 		return state;
+	}
+
+	public int nextRound() {
+		return ++round;
+	}
+	
+	public int getRound() {
+		return round;
 	}
 
 	public void setState(int state) {

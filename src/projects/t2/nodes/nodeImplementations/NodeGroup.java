@@ -109,7 +109,7 @@ public class NodeGroup extends NodeT2 {
 
 	private void checkPropose() {
 		if (this.getState() == 0 && Omega().ID == this.ID) {
-			Propose propose = new Propose(this.nextRound(), this, this);
+			Propose propose = new Propose(this, this);
 			co_readPropose(propose);
 		}
 	}
@@ -205,12 +205,12 @@ public class NodeGroup extends NodeT2 {
 
 	private void co_readPropose(Propose message) {
 		logMsg("Propose by " + ((Propose) message).sender.ID);
-		if (this.ID == message.coord.ID &&(this.getRound()==message.round)&& this.ID == Omega().ID) {
+		if (this.ID == message.coord.ID &&this.ID == Omega().ID) {
 			if (this.getState() != 0) {
 				this.reset();
 			}
 			this.count_prepare = 0;
-			Prepare prepare = new Prepare(message.round, this, this);
+			Prepare prepare = new Prepare(this, this);
 			this.flooding(prepare);
 			this.setState(1);
 		}
@@ -218,9 +218,9 @@ public class NodeGroup extends NodeT2 {
 
 	private void no_readPrepare(Prepare message) {
 		this.flooding(message);
-		if ((message.coord.ID != this.ID) &&(this.getRound()==message.round)&& (this.getState() == 0)
+		if ((message.coord.ID != this.ID) &&(this.getState() == 0)
 				&& (Omega().ID == message.coord.ID)) {
-			ACK_Prepare ack = new ACK_Prepare(message.round, this, message.coord, this);
+			ACK_Prepare ack = new ACK_Prepare(this, message.coord, this);
 			this.flooding(ack);
 			this.setState(2);
 		}
@@ -228,17 +228,17 @@ public class NodeGroup extends NodeT2 {
 
 	private void co_readACK_Prepare(ACK_Prepare message) {
 		this.flooding(message);
-		if (this.getState() == 1 &&(this.getRound()==message.round)&& message.coord.ID == this.ID) {
+		if (this.getState() == 1 &&message.coord.ID == this.ID) {
 			this.count_prepare++;
 			if (this.count_prepare > ((this.getTotalNodes()) / 2) - 1) {
-				this.co_startAccept(message.round);
+				this.co_startAccept();
 			}
 		}
 	}
 
-	private void co_startAccept(int round) {
-		if ((this.getState() == 1) &&(this.getRound()==round)&& (Omega().ID == this.ID)) {
-			Accept ack = new Accept(round, this, this);
+	private void co_startAccept() {
+		if ((this.getState() == 1) &&(Omega().ID == this.ID)) {
+			Accept ack = new Accept(this, this);
 			this.flooding(ack);
 			this.count_accept = 0;
 			this.setState(2);
@@ -247,9 +247,9 @@ public class NodeGroup extends NodeT2 {
 
 	private void no_readAccept(Accept message) {
 		this.flooding(message);
-		if ((message.coord.ID != this.ID)&&(this.getRound()==message.round) && (this.getState() == 2)
+		if ((message.coord.ID != this.ID)&& (this.getState() == 2)
 				&& (Omega().ID == message.coord.ID)) {
-			ACK_Accept ack = new ACK_Accept(round, this, message.coord, this);
+			ACK_Accept ack = new ACK_Accept(this, message.coord, this);
 			this.flooding(ack);
 			this.coordenatorGroup = message.coord;
 			this.setState(0);
@@ -258,7 +258,7 @@ public class NodeGroup extends NodeT2 {
 
 	private void co_readACK_Accept(ACK_Accept message) {
 		this.flooding(message);
-		if (this.getState() == 2 &&(this.getRound()==message.round)&& message.coord.ID == this.ID) {
+		if (this.getState() == 2 &&message.coord.ID == this.ID) {
 			this.count_accept++;
 			if (this.count_accept > ((this.getTotalNodes() / 2) - 1)) {
 				this.co_sendDecided();
@@ -274,7 +274,7 @@ public class NodeGroup extends NodeT2 {
 		log("Consenso realizado no No " + this.ID + " coord "
 				+ this.coordenatorGroup.ID);
 		consenso++;
-		Decided decided = new Decided(round, this, this);
+		Decided decided = new Decided(this, this);
 		this.flooding(decided);
 	}
 
