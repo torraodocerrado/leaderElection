@@ -1,13 +1,13 @@
 package projects.t2.nodes.messages;
 
-import projects.t2.nodes.nodeImplementations.MobileNode;
+import projects.t2.nodes.nodeImplementations.NodeT2;
 import sinalgo.nodes.Node;
 
 public class Prepare extends T2Message {
-	public MobileNode coord;
+	public NodeT2 coord;
 	
-	public Prepare(Node sender, MobileNode coord) {
-		super(sender);
+	public Prepare(int round, Node sender, NodeT2 coord) {
+		super(round,sender);
 		this.coord = coord;
 	}
 }

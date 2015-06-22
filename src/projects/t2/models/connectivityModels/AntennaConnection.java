@@ -24,9 +24,9 @@ public class AntennaConnection extends ConnectivityModelHelper {
 	public AntennaConnection() throws CorruptConfigurationEntryException {
 		if (!initialized) { // only initialize once
 			double geomNodeRMax = Configuration
-					.getDoubleParameter("GeometricNodeCollection/rMax");
+					.getDoubleParameter("AntennaConnection/rMax");
 			try {
-				rMaxSquare = Configuration.getDoubleParameter("UDG/rMax");
+				rMaxSquare = Configuration.getDoubleParameter("AntennaConnection/rMax");
 			} catch (CorruptConfigurationEntryException e) {
 				Global.log
 						.logln("\nWARNING: Did not find an entry for UDG/rMax in the XML configuration file. Using GeometricNodeCollection/rMax.\n");

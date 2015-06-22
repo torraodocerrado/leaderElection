@@ -85,15 +85,6 @@ public class Antenna extends NodeT2 {
 		this.broadcast(message);
 	}
 
-	private void readDecided(Decided message) {
-		if ((this.getState() == 2) && (Omega().ID == message.coord.ID)) {
-			this.setState(0);
-			this.coordenatorGroup = message.coord;
-			log("Consenso realizado na antena " + this.ID + " coord "
-					+ this.coordenatorGroup.ID);
-		}
-	}
-
 	@Override
 	public void neighborhoodChange() {
 	}
@@ -106,26 +97,21 @@ public class Antenna extends NodeT2 {
 	}
 
 	private void propose() {
-		MobileNode leader = Omega();
+		MobileNode leader = (MobileNode) Omega();
 		if (leader != null) {
 			if (this.outgoingConnections.contains(this, leader)) {
-				Propose propose = new Propose(this, leader);
+				Propose propose = new Propose(this.nextRound(), this, leader);
 				this.send(propose, leader);
 				this.setState(2);
 			}
 		}
 	}
 
-	@Override
-	public void postStep() {
-		this.checkTimeOut();
-	}
-
 	private static int radius;
 	{
 		try {
 			radius = Configuration
-					.getIntegerParameter("GeometricNodeCollection/rMax");
+					.getIntegerParameter("AntennaConnection/rMax");
 		} catch (CorruptConfigurationEntryException e) {
 			Tools.fatalError(e.getMessage());
 		}

@@ -23,7 +23,7 @@ public class GridDistribution extends DistributionModel{
 	
 	public void initialize(){
 		try {
-			radius = Configuration.getDoubleParameter("GeometricNodeCollection/rMax");
+			radius = Configuration.getDoubleParameter("AntennaConnection/rMax");
 		} catch (CorruptConfigurationEntryException e) {
 			e.printStackTrace();
 		}

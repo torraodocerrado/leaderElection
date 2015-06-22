@@ -1,5 +1,10 @@
 package projects.t2.nodes.nodeImplementations;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import projects.t1.LogFile;
+import projects.t2.nodes.messages.Decided;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.nodes.Node;
@@ -9,16 +14,29 @@ import sinalgo.tools.Tools;
 
 public abstract class NodeT2 extends Node {
 	private boolean log_on = true;
-	private boolean logmsg_on = true;
-	public MobileNode coordenatorGroup;
+	private boolean logmsg_on = false;
+	public NodeT2 coordenatorGroup;
 	protected double currentTimeOut = 0;
 	protected int timeOut;
 	/* state of node 0 = Normal 1 = Prepare 2 = Accept */
 	private int state;
+	public static int round = 0;
+
 	protected boolean useAntenna;
+	public static LogFile fileLog;
+	public static int consenso = 0;
+	public static int msg = 0;
 
 	public int getState() {
 		return state;
+	}
+
+	public int nextRound() {
+		return ++round;
+	}
+	
+	public int getRound() {
+		return round;
 	}
 
 	public void setState(int state) {
@@ -29,11 +47,11 @@ public abstract class NodeT2 extends Node {
 			this.currentTimeOut = Global.currentTime + this.timeOut;
 		}
 	}
-	
-	public int getTotalNodes(){
+
+	public int getTotalNodes() {
 		int i = 0;
 		for (Node no : Tools.getNodeList()) {
-			if(no instanceof MobileNode){
+			if (!(no instanceof Antenna)) {
 				i++;
 			}
 		}
@@ -49,11 +67,37 @@ public abstract class NodeT2 extends Node {
 		} catch (CorruptConfigurationEntryException e) {
 			e.printStackTrace();
 		}
+		if (fileLog == null) {
+			fileLog = new LogFile(this.getNameFile());
+			fileLog.add("step;qtdNosInstaveis;qtdRoundsNosInstaveis");
+			fileLog.ln();
+		}
 	}
 
-	public MobileNode Omega() {
+	@Override
+	public void postStep() {
+		this.checkTimeOut();
+		if ((Global.currentTime % 5000 == 0)) {
+			fileLog.add(((int) (Math.round(Global.currentTime))) + ";"
+					+ consenso + ";" + Global.numberOfMessagesOverAll + ";");
+			fileLog.ln();
+		}
+		if (Global.currentTime > 10010) {
+			System.exit(0);
+		}
+	}
+
+	private String getNameFile() {
+		String prefixo = "0_";
+		SimpleDateFormat ft = new SimpleDateFormat(
+				"dd-MM-yyyy-'at'-hh-mm-ss-SSS-a");
+		Date today = new Date();
+		return prefixo + ft.format(today) + "_report.csv";
+	}
+
+	public Node Omega() {
 		NodeCollectionInterface nos = Tools.getNodeList();
-		MobileNode result = null;
+		Node result = null;
 		if (this instanceof MobileNode) {
 			result = (MobileNode) this;
 		}
@@ -135,6 +179,16 @@ public abstract class NodeT2 extends Node {
 			((MobileNode) this).currentAntenna = null;
 			((MobileNode) this).count_accept = 0;
 			((MobileNode) this).count_prepare = 0;
+		}
+	}
+
+	protected void readDecided(Decided message) {
+		if ((this.getState() == 2) && (Omega().ID == message.coord.ID)) {
+			this.setState(0);
+			this.coordenatorGroup = message.coord;
+			log("Consenso realizado na antena " + this.ID + " coord "
+					+ this.coordenatorGroup.ID);
+			consenso++;
 		}
 	}
 

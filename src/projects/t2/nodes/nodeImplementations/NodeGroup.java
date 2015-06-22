@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
@@ -16,27 +17,24 @@ import projects.t2.nodes.messages.Accept;
 import projects.t2.nodes.messages.Decided;
 import projects.t2.nodes.messages.Prepare;
 import projects.t2.nodes.messages.Propose;
+import projects.t2.nodes.messages.T2Message;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
 import sinalgo.nodes.Connections;
+import sinalgo.nodes.Node;
 import sinalgo.nodes.edges.Edge;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
 import sinalgo.runtime.Global;
 
-public class MobileNode extends NodeT2 {
+public class NodeGroup extends NodeT2 {
 
-	Antenna currentAntenna = null;
 	int count_prepare = 0;
 	int count_accept = 0;
 	BufferedImage imgLider = null;
 	BufferedImage imgOffline = null;
 	BufferedImage imgPolitico = null;
-
-	public Antenna getCurrentAntenna() {
-		return currentAntenna;
-	}
 
 	@Override
 	public void checkRequirements() throws WrongConfigurationException {
@@ -66,6 +64,10 @@ public class MobileNode extends NodeT2 {
 				logMsg("ACK_Accept by " + ((ACK_Accept) message).no.ID);
 				this.co_readACK_Accept((ACK_Accept) message);
 			}
+			if (message instanceof Decided) {
+				logMsg("Decided by " + ((Decided) message).sender.ID);
+				this.readDecided((Decided) message);
+			}
 		}
 	}
 
@@ -74,32 +76,44 @@ public class MobileNode extends NodeT2 {
 	}
 
 	@Override
+	public Node Omega() {
+		ArrayList<Node> result = new ArrayList<>();
+		result = this.dfs(result, this);
+		Node max = this;
+		for (Node node : result) {
+			if (max.ID < node.ID) {
+				max = node;
+			}
+		}
+		return max;
+	}
+
+	public ArrayList<Node> dfs(ArrayList<Node> visitados, Node raiz) {
+		visitados.add(raiz);
+		Connections conn = raiz.outgoingConnections;
+		for (Edge edge : conn) {
+			if (!visitados.contains(edge.endNode)) {
+				dfs(visitados, edge.endNode);
+			}
+			if (!visitados.contains(edge.startNode)) {
+				dfs(visitados, edge.startNode);
+			}
+		}
+		return visitados;
+	}
+
+	@Override
 	public void preStep() {
-		this.checkAntenna();
+		this.checkPropose();
 	}
 
-	public void checkAntenna() {
-		if (this.useAntenna) {
-			Antenna ant = this.getNewAntenna();
-			if (this.currentAntenna != null && ant == null) {
-				this.reset();
-			} else if (this.currentAntenna == null) {
-				this.currentAntenna = ant;
-			} else if (this.currentAntenna.ID != ant.ID) {
-				this.reset();
-			}
+	private void checkPropose() {
+		if (this.getState() == 0 && Omega().ID == this.ID) {
+			Propose propose = new Propose(this.nextRound(), this, this);
+			co_readPropose(propose);
 		}
 	}
 
-	private Antenna getNewAntenna() {
-		Connections no = this.outgoingConnections;
-		for (Edge edge : no) {
-			if (edge.endNode instanceof Antenna) {
-				return (Antenna) edge.endNode;
-			}
-		}
-		return null;
-	}
 
 	@Override
 	public void init() {
@@ -179,7 +193,7 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private boolean IamAlone() {
-		return this.currentAntenna == null && this.useAntenna == true;
+		return this.outgoingConnections.size() == 0;
 	}
 
 	private boolean IamCoord() {
@@ -190,32 +204,31 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_readPropose(Propose message) {
+		logMsg("Propose by " + ((Propose) message).sender.ID);
 		if (this.ID == message.coord.ID &&(this.getRound()==message.round)&& this.ID == Omega().ID) {
 			if (this.getState() != 0) {
 				this.reset();
 			}
 			this.count_prepare = 0;
 			Prepare prepare = new Prepare(message.round, this, this);
-			this.send(prepare, message.sender);
+			this.flooding(prepare);
 			this.setState(1);
 		}
 	}
 
 	private void no_readPrepare(Prepare message) {
+		this.flooding(message);
 		if ((message.coord.ID != this.ID) &&(this.getRound()==message.round)&& (this.getState() == 0)
 				&& (Omega().ID == message.coord.ID)) {
-			ACK_Prepare ack = new ACK_Prepare(message.round, this,
-					message.coord, this);
-			while (this.currentAntenna == null) {
-				this.checkAntenna();
-			}
-			this.send(ack, this.currentAntenna);
+			ACK_Prepare ack = new ACK_Prepare(message.round, this, message.coord, this);
+			this.flooding(ack);
 			this.setState(2);
 		}
 	}
 
 	private void co_readACK_Prepare(ACK_Prepare message) {
-		if ((this.getRound()==message.round) && this.getState() == 1 && message.coord.ID == this.ID) {
+		this.flooding(message);
+		if (this.getState() == 1 &&(this.getRound()==message.round)&& message.coord.ID == this.ID) {
 			this.count_prepare++;
 			if (this.count_prepare > ((this.getTotalNodes()) / 2) - 1) {
 				this.co_startAccept(message.round);
@@ -224,29 +237,28 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_startAccept(int round) {
-		if ((this.getRound()==round) && (this.getState() == 1) && (Omega().ID == this.ID)) {
+		if ((this.getState() == 1) &&(this.getRound()==round)&& (Omega().ID == this.ID)) {
 			Accept ack = new Accept(round, this, this);
-			this.send(ack, this.currentAntenna);
+			this.flooding(ack);
 			this.count_accept = 0;
 			this.setState(2);
 		}
 	}
 
 	private void no_readAccept(Accept message) {
-		if ((message.coord.ID != this.ID) && (this.getState() == 2)
-				&& (this.getRound() == message.round)
+		this.flooding(message);
+		if ((message.coord.ID != this.ID)&&(this.getRound()==message.round) && (this.getState() == 2)
 				&& (Omega().ID == message.coord.ID)) {
-			ACK_Accept ack = new ACK_Accept(message.round, this, message.coord,
-					this);
-			this.send(ack, this.currentAntenna);
+			ACK_Accept ack = new ACK_Accept(round, this, message.coord, this);
+			this.flooding(ack);
 			this.coordenatorGroup = message.coord;
 			this.setState(0);
 		}
 	}
 
 	private void co_readACK_Accept(ACK_Accept message) {
-		if (this.getState() == 2 && (this.getRound() == message.round)
-				&& message.coord.ID == this.ID) {
+		this.flooding(message);
+		if (this.getState() == 2 &&(this.getRound()==message.round)&& message.coord.ID == this.ID) {
 			this.count_accept++;
 			if (this.count_accept > ((this.getTotalNodes() / 2) - 1)) {
 				this.co_sendDecided();
@@ -255,15 +267,34 @@ public class MobileNode extends NodeT2 {
 	}
 
 	private void co_sendDecided() {
-		if (this.currentAntenna != null) {
-			this.setState(0);
-			this.count_accept = 0;
-			this.count_prepare = 0;
-			this.coordenatorGroup = this;
-			Decided decided = new Decided(round, this, this);
-			this.send(decided, this.currentAntenna);
-		} else {
-			this.reset();
+		this.setState(0);
+		this.count_accept = 0;
+		this.count_prepare = 0;
+		this.coordenatorGroup = this;
+		log("Consenso realizado no No " + this.ID + " coord "
+				+ this.coordenatorGroup.ID);
+		consenso++;
+		Decided decided = new Decided(round, this, this);
+		this.flooding(decided);
+	}
+
+	private void flooding(T2Message message) {
+		Connections nos = this.outgoingConnections;
+		message.ids.add(this.ID);
+		message.sender = this;
+		ArrayList<Node> send = new ArrayList<>();
+		for (Edge edge : nos) {
+			if (!message.ids.contains(edge.endNode.ID)) {
+				message.ids.add(edge.endNode.ID);
+				send.add(edge.endNode);
+			}
+			if (!message.ids.contains(edge.startNode.ID)) {
+				message.ids.add(edge.startNode.ID);
+				send.add(edge.startNode);
+			}
+		}
+		for (Node node : send) {
+			this.send(message, node);
 		}
 	}
 

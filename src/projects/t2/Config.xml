@@ -89,7 +89,7 @@
 		<javaCmd value="java" />
 
 		<!--Maximum memory the Java VM is allowed to use (in MB) -->
-		<javaVMmaxMem value="500" />
+		<javaVMmaxMem value="1024" />
 
 		<!--*********************************************************************** -->
 		<!-- Random number generators -->
@@ -182,22 +182,22 @@
 			value="ConstantTime" />
 
 		<!--Default connectivity model used when none is specified -->
-		<DefaultConnectivityModel value="t2:AntennaConnection" />
+		<DefaultConnectivityModel value="UDG" />
 
 		<!--Default distribution model used when none is specified -->
-		<DefaultDistributionModel value="t2:GridDistribution" />
+		<DefaultDistributionModel value="Random" />
 
 		<!--Default interference model used when none is specified -->
 		<DefaultInterferenceModel value="NoInterference" />
 
 		<!--Default mobility model used when none is specified -->
-		<DefaultMobilityModel value="NoMobility" />
+		<DefaultMobilityModel value="t2:MoveAndWait" />
 
 		<!--Default reliability model used when none is specified -->
 		<DefaultReliabilityModel value="ReliableDelivery" />
 
 		<!--Default node implementation used when none is specified -->
-		<DefaultNodeImplementation value="t2:Antenna" />
+		<DefaultNodeImplementation value="t2:NodeGroup" />
 
 		<!--Show the models implemented by all projects in the drop down options. 
 			When set to false, only the models by the selected project and the default 
@@ -277,12 +277,15 @@
 
 	</Framework>
 	<Custom>
-		<GeometricNodeCollection rMax="166" />
-		<UDG rMax="166" />
+		<GeometricNodeCollection rMax="300" />
+		<UDG rMax="300" />
+
+		<AntennaConnection rMax="166" />
+
 
 		<Node defaultSize="10" />
 
-		<MessageTransmission ConstantTime="1" timeOut="200"/>
+		<MessageTransmission ConstantTime="1" timeOut="100"/>
 
 		<Antenna>
 			<InviteIntervall distribution="Uniform" min="6" max="12" /><!-- 

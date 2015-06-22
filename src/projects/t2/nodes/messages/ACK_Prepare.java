@@ -1,15 +1,15 @@
 package projects.t2.nodes.messages;
 
-import projects.t2.nodes.nodeImplementations.MobileNode;
+import projects.t2.nodes.nodeImplementations.NodeT2;
 import sinalgo.nodes.Node;
 
 public class ACK_Prepare extends T2Message {
-	public MobileNode coord;
-	public MobileNode no;
+	public NodeT2 coord;
+	public NodeT2 no;
 	
 	
-	public ACK_Prepare(Node sender, MobileNode coord, MobileNode no) {
-		super(sender);
+	public ACK_Prepare(int round,Node sender, NodeT2 coord, NodeT2 no) {
+		super(round, sender);
 		this.coord = coord;
 		this.no = no;
 	}
